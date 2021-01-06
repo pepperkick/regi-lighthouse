@@ -5,7 +5,5 @@ import config from "../config.json";
 @DiscordBot({
 	config,
 	modules: [ new BookingModule() ]
-}, {
-	partials: [ 'MESSAGE', 'REACTION', 'USER' ]
-}) 
+})
 class Bot {}
