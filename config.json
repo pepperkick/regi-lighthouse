@@ -13,8 +13,8 @@
     }
   },
   "channels": {
-    "booking": "",
-    "admin": ""
+    "booking": "743009150228889671",
+    "admin": "743009150228889671"
   },
   "express": {
     "host": "http://localhost",

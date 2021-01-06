@@ -2,6 +2,7 @@ import { DiscordBotModule, BotCommand, BotEvent, DiscordEvents } from "kennex";
 import { Message, User, MessageEmbed, Client, TextChannel } from "discord.js";
 import request from "request-promise";
 import Express from "express";
+import { I18n } from "i18n";
 import * as bodyParser from "body-parser";
 import { BookingDTO } from "./dto/booking.dto";
 import { BookingStatusDTO } from "./dto/booking-status.dto";
@@ -16,7 +17,7 @@ export class BookingModule {
 	client?: Client;
 	express: Express.Application;
 
-	constructor() {
+	constructor(private i18n: I18n) {
 		this.express = Express();
 		this.express.use(bodyParser.json());
 		this.express.listen(config.express.port, () => {
@@ -135,7 +136,7 @@ export class BookingModule {
 	private async bookServer(user: User, bookedBy: User, selectors: {}) {
 		const chl = await this.client?.channels.fetch(config.channels.booking) as TextChannel;
 		const message = await chl.send(user,
-			this.buildTextMessage(MessageType.INFO, "Your server is being booked...\nThis may take some time.\nDetails will be sent via private message when the server is ready."));
+			this.buildTextMessage(MessageType.INFO, this.i18n.__("Booking Start")));
 		try {
 			await this.sendBookRequest(user, bookedBy, selectors, message);
 
@@ -143,13 +144,13 @@ export class BookingModule {
 		} catch (error) {
 			if (error.statusCode === 409) {
 				await message.edit(user,
-					this.buildTextMessage(MessageType.WARNING, `You have already booked a server\nUse \`unbook\` command to remove your booking.\nIf you recently used 'unbook' then please wait until the previous server has been closed.`))
+					this.buildTextMessage(MessageType.WARNING, this.i18n.__("Booking Already Exists")))
 			} else if (error.statusCode && error.statusCode === 429) {
 				await message.edit(user,
-					this.buildTextMessage(MessageType.WARNING, "The maximum amount of free bookable servers for your location has been reached. Please try again later or you can check-out <https://www.patreon.com/qixalite> to gain access to our exclusive server pool."))
+					this.buildTextMessage(MessageType.WARNING, this.i18n.__("Booking Limit Reached")))
 			} else {
 				await message.edit(user,
-					this.buildTextMessage(MessageType.ERROR, "Your server has failed to start. Please try again later."));
+					this.buildTextMessage(MessageType.ERROR, this.i18n.__("Booking Failed")));
 
 				console.log(error);
 			}
@@ -269,16 +270,6 @@ export class BookingModule {
 			let _user = undefined;
 			try {
 				_user = await this.client?.users.fetch(id);
-
-				if (!_user) {
-					return msg.channel.send(msg.author,
-						this.buildTextMessage(MessageType.WARNING, `Could not find that user`));
-				}
-
-				if (_user.bot) {
-					return msg.channel.send(msg.author,
-						this.buildTextMessage(MessageType.WARNING, `Giving bookings to bots may result in world domination. Your welcome! ;)`));
-				}
 			} catch (error) {}
 
 			if (_user) {
@@ -288,22 +279,22 @@ export class BookingModule {
 
 				if (!region)
 					return msg.channel.send(msg.author,
-						this.buildTextMessage(MessageType.WARNING, "Unknown region or currently that region is not supported."));
+						this.buildTextMessage(MessageType.WARNING, this.i18n.__("Unknown Region")));
 
 				if (region === "sao-paulo")
 					if (!msg.member?.roles.cache.get(config.roles.beta_sp_bookings))
 						return msg.channel.send(msg.author,
-							this.buildTextMessage(MessageType.WARNING, "Currently São Paulo region is only allowed to few testers, contact us if you are interested to try it."));
+							this.buildTextMessage(MessageType.WARNING, this.i18n.__("Restricted Region", { region: "São Paulo" })));
 
 				if (region === "bangalore")
 					if (!msg.member?.roles.cache.get(config.roles.beta_in_bookings))
 						return msg.channel.send(msg.author,
-							this.buildTextMessage(MessageType.WARNING, "Currently Bangalore region is only allowed to few testers, contact us if you are interested to try it."));
+							this.buildTextMessage(MessageType.WARNING, this.i18n.__("Restricted Region", { region: "Bangalore" })));
 
 				if (region === "pune")
 					if (!msg.member?.roles.cache.get(config.roles.beta_in_bookings))
 						return msg.channel.send(msg.author,
-							this.buildTextMessage(MessageType.WARNING, "Currently Pune region is only allowed to few testers, contact us if you are interested to try it."));
+							this.buildTextMessage(MessageType.WARNING, this.i18n.__("Restricted Region", { region: "Pune" })));
 
 				selectors.region = region
 			}
@@ -315,22 +306,22 @@ export class BookingModule {
 
 				if (!_user) {
 					return msg.channel.send(msg.author,
-						this.buildTextMessage(MessageType.WARNING, `Could not find that user`));
+						this.buildTextMessage(MessageType.WARNING, this.i18n.__("User Not Found")));
 				}
 
 				if (_user.bot) {
 					return msg.channel.send(msg.author,
-						this.buildTextMessage(MessageType.WARNING, `Giving bookings to bots may result in world domination. Your welcome! ;)`));
+						this.buildTextMessage(MessageType.WARNING, this.i18n.__("User Is Bot")));
 				}
 
 				if (!region)
 					return msg.channel.send(msg.author,
-						this.buildTextMessage(MessageType.WARNING, "Unknown region or currently that region is not supported."));
+						this.buildTextMessage(MessageType.WARNING, this.i18n.__("Unknown Region")));
 
 				if (region === "sao-paulo")
 					if (!msg.member?.roles.cache.get(config.roles.beta_sp_bookings))
 						return msg.channel.send(msg.author,
-							this.buildTextMessage(MessageType.WARNING, "Currently São Paulo region is only allowed to few testers, contact us if you are interested to try it."));
+							this.buildTextMessage(MessageType.WARNING, this.i18n.__("Restricted Region", { region: "São Paulo" })));
 
 				selectors.region = region
 				user = _user
@@ -359,7 +350,7 @@ export class BookingModule {
 
 				if (bookings.length >= config.preferences.tier_3_multi_booking_limit)
 					return msg.channel.send(msg.author,
-						this.buildTextMessage(MessageType.WARNING, "You have reached maximum number of multi booking that is allowed."));
+						this.buildTextMessage(MessageType.WARNING, this.i18n.__("Multi Booking Limit Reached")));
 				else
 					selectors.tier = "premium";
 			}
@@ -370,12 +361,12 @@ export class BookingModule {
 
 				if (!hasLeagueRole && bookings.length >= config.preferences.tier_3_multi_booking_limit)
 					return msg.channel.send(msg.author,
-						this.buildTextMessage(MessageType.WARNING, "You have reached maximum number of multi booking that is allowed."));
+						this.buildTextMessage(MessageType.WARNING, this.i18n.__("Multi Booking Limit Reached")));
 				else
 					selectors.tier = "premium";
 			} else
 				return msg.channel.send(msg.author,
-					this.buildTextMessage(MessageType.WARNING, "Multiple bookings is only accessible to **Tier 3** subscribers. Check-out <https://www.patreon.com/qixalite>"));
+					this.buildTextMessage(MessageType.WARNING, this.i18n.__("Multi Booking Restricted")));
 		}
 
 		await this.bookServer(user, bookedBy, selectors);
@@ -393,19 +384,19 @@ export class BookingModule {
 
 		if (args.length < 2)
 			return msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.WARNING, `Usage: unbook <discord user> [region] [tier]`));
+				this.buildTextMessage(MessageType.WARNING, this.i18n.__("Admin Command Book Usage")));
 
 		const id = this.extractIdFromArg(args[1]);
 		const user = await this.client?.users.fetch(id);
 
 		if (!user) {
 			return msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.WARNING, `Could not find that user`));
+				this.buildTextMessage(MessageType.WARNING, this.i18n.__("User Not Found")));
 		}
 
 		if (user.bot) {
 			return msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.WARNING, `Giving bookings to bots can result in world domination. Your welcome! ;)`));
+				this.buildTextMessage(MessageType.WARNING, this.i18n.__("User Is Bot")));
 		}
 
 		if (args.length >= 3) {
@@ -423,20 +414,20 @@ export class BookingModule {
 					break;
 				default:
 					return msg.channel.send(msg.author,
-						this.buildTextMessage(MessageType.WARNING, "That is an unknown tier."));
+						this.buildTextMessage(MessageType.WARNING, this.i18n.__("Unknown Tier")));
 			}
 		}
 
 		try {
 			await msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.INFO, `Server will be booked and details will be sent via private message to ${this.userInfo(user)}`));
+				this.buildTextMessage(MessageType.INFO, this.i18n.__("Admin Booking Start", { user: this.userInfo(user) })));
 
 			await this.bookServer(user, bookedBy, selectors);
 
 			console.log(`Book request sent for ${this.userInfo(user)} by admin ${this.userInfo(msg.author)}`);
 		} catch (error) {
 			await msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.ERROR, "Server for the user has failed to start. Please try again later."));
+				this.buildTextMessage(MessageType.ERROR, this.i18n.__("Admin Booking Failed")));
 
 			console.log(`Failed to create book request for ${this.userInfo(msg.author)} due to ${error}`);
 		}
@@ -445,7 +436,7 @@ export class BookingModule {
 	private async unbookServer(user: User) {
 		const chl = await this.client?.channels.fetch(config.channels.booking) as TextChannel;
 		const message = await chl.send(user,
-			this.buildTextMessage(MessageType.INFO, "Your server is being closed...\nThis may take some time."));
+			this.buildTextMessage(MessageType.INFO, this.i18n.__("Unbooking Start")));
 
 		try {
 			await this.sendUnbookRequest(user, message);
@@ -453,10 +444,10 @@ export class BookingModule {
 		} catch (error) {
 			if (error.statusCode === 404) {
 				await message.edit(user,
-					this.buildTextMessage(MessageType.WARNING, "You do not have any booking with us."));
+					this.buildTextMessage(MessageType.WARNING, this.i18n.__("Unbooking Not Found")));
 			} else {
 				await message.edit(user,
-					this.buildTextMessage(MessageType.ERROR, "Your server has failed to stop. Please try again later."));
+					this.buildTextMessage(MessageType.ERROR, this.i18n.__("Unbooking Failed")));
 
 				console.log(error);
 			}
@@ -503,7 +494,7 @@ export class BookingModule {
 
 		if (args.length !== 1)
 			return msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.WARNING, `Usage: unbook\nYou can only unbook your own server.`));
+				this.buildTextMessage(MessageType.WARNING, this.i18n.__("Command Unbook Usage")));
 
 		await this.unbookServer(msg.author);
 	}
@@ -518,31 +509,31 @@ export class BookingModule {
 
 		if (args.length !== 2)
 			return msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.WARNING, `Usage: unbook <discord user>`));
+				this.buildTextMessage(MessageType.WARNING, this.i18n.__("Admin Command Unbook Usage")));
 
 		const id = this.extractIdFromArg(args[1]);
 		const user = await this.client?.users.fetch(id);
 
 		if (!user) {
 			return msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.WARNING, `Could not find that user`));
+				this.buildTextMessage(MessageType.WARNING, this.i18n.__("User Not Found")));
 		}
 
 		if (user.bot) {
 			return msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.WARNING, `We bots cannot have bookings :(`));
+				this.buildTextMessage(MessageType.WARNING, this.i18n.__("Bot Has No Booking")));
 		}
 
 		try {
 			await msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.SUCCESS, `Server will be unbooked for ${this.userInfo(user)}`));
+				this.buildTextMessage(MessageType.SUCCESS, this.i18n.__("Admin Unbooking Start", { user: this.userInfo(user) })));
 
 			await this.unbookServer(user);
 
 			console.log(`Server unbook requested for ${this.userInfo(user)} by ${this.userInfo(msg.author)}`);
 		} catch (error) {
 			await msg.channel.send(msg.author,
-				this.buildTextMessage(MessageType.ERROR, "Failed to stop the user's server. Please try again later."));
+				this.buildTextMessage(MessageType.ERROR, this.i18n.__("Admin Unbooking Failed")));
 
 			console.log(error);
 			console.log(`Failed to unbook server for ${this.userInfo(msg.author)} due to ${error}`);
@@ -566,7 +557,7 @@ export class BookingModule {
 			await msg.channel.send(message);
 		} catch (error) {
 			await msg.reply(
-				this.buildTextMessage(MessageType.ERROR, "Looks like there are some issues. Please try again later."));
+				this.buildTextMessage(MessageType.ERROR, this.i18n.__("Command Error")));
 
 			console.log(`Failed to get status due to ${error}`);
 		}
@@ -604,7 +595,7 @@ export class BookingModule {
 
 				if (!status) {
 					return msg.channel.send(
-						this.buildTextMessage(MessageType.WARNING, "No booking found with that ID."));
+						this.buildTextMessage(MessageType.WARNING, this.i18n.__("Booking Details Not Found")));
 				}
 
 				const message = this.buildMessageEmbed(MessageType.INFO);
@@ -615,7 +606,7 @@ export class BookingModule {
 			}
 		} catch (error) {
 			await msg.reply(
-				this.buildTextMessage(MessageType.ERROR, "Looks like there are some issues. Please try again later."));
+				this.buildTextMessage(MessageType.ERROR, this.i18n.__("Command Error")));
 
 			console.log(`Failed to get status due to ${error}`);
 		}
@@ -763,17 +754,21 @@ export class BookingModule {
 					const booking = data.booking;
 
 					await msg.edit(user,
-						this.buildTextMessage(MessageType.SUCCESS, "Your server details have been sent via private message.\nPlease open a ticket in #support if you have any issues."));
+						this.buildTextMessage(MessageType.SUCCESS, this.i18n.__("Booking Details Sent")));
 
 					try {
 						await (await user.createDM()).send(this.buildConnectMessage(booking));
 					} catch (error) {
 						if (error.message === "Cannot send messages to this user") {
 							await msg.edit(user,
-								this.buildTextMessage(MessageType.ERROR, "Failed to send server details via private message. This is generally due to privacy settings in discord. Check-out <https://docs.qixalite.com/support/tf2/#not-receiving-bot-messages>"));
+								this.buildTextMessage(MessageType.ERROR,
+									this.i18n.__("Booking Details Failed to Send due to Private DM")
+								));
 						} else  {
 							await msg.edit(user,
-								this.buildTextMessage(MessageType.ERROR, "Failed to send server details via private message due to unknown error. Please contact support."));
+								this.buildTextMessage(MessageType.ERROR,
+									this.i18n.__("Booking Details Failed to Send")
+								));
 
 							console.error(error)
 						}
@@ -782,11 +777,11 @@ export class BookingModule {
 					console.log(`Server booked for ${this.userInfo(user)}`);
 				} else if (event === "BOOK_FAILED") {
 					await msg.edit(user,
-						this.buildTextMessage(MessageType.ERROR, "Your server has failed to start. Please try again later."));
+						this.buildTextMessage(MessageType.ERROR, this.i18n.__("Booking Failed")));
 
 					console.log(`Server failed to book for ${this.userInfo(user)}`);
 				} else if (event === "UNBOOK_END") {
-					const embed = this.buildTextMessage(MessageType.SUCCESS, `Your server has been closed. Thank you for using our service, if you have any suggestions you can post them in #feedback.`);
+					const embed = this.buildTextMessage(MessageType.SUCCESS, this.i18n.__("Unbooking Success"));
 
 					if (msg)
 						await msg.edit(user, embed);
@@ -799,7 +794,7 @@ export class BookingModule {
 
 					console.log(`Server unbooked for ${this.userInfo(user)}`);
 				} else if (event === "UNBOOK_FAILED") {
-					const embed = this.buildTextMessage(MessageType.ERROR, "Your server has failed to stop. Please try again later.");
+					const embed = this.buildTextMessage(MessageType.ERROR, this.i18n.__("Unbooking Failed"));
 
 					if (msg)
 						await msg.edit(user, embed);
