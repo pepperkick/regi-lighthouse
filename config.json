@@ -1,0 +1,33 @@
+{
+  "mongodbUri": "",
+  "token": "",
+  "localhost": "",
+  "prefix": "",
+  "channels": {
+    "users": "",
+    "admin": ""
+  },
+  "bot": {
+    "name": "",
+    "avatar": "",
+    "image": "",
+    "footer": {
+      "text": "",
+      "icon": ""
+    }
+  },
+  "lighthouse": {
+    "host": "",
+    "clientId": "",
+    "clientSecret": ""
+  },
+  "roles": {
+    "premium_tier_1": "",
+    "premium_tier_2": "",
+    "premium_tier_3": "",
+    "league_partner": ""
+  },
+  "game": "",
+  "regions": {
+  }
+}
