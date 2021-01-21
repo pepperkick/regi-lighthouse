@@ -268,8 +268,11 @@ export class BookingAdminService {
 
 		text += `\nS. Booking:  ${booking.status}`;
 
-		if (isRunning)
+		if (isRunning) {
 			text += `\n\nconnect ${server.ip}:${server.port}; password ${server.password}; rcon_password ${server.rconPassword}`;
+			text += `\nhttps://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}`
+		}
+
 		text += "```";
 
 		return text;

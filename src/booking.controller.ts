@@ -309,30 +309,30 @@ export class BookingController {
 		// TODO: Add usage
 	}
 
-	@OnDMCommand("resend")
-	@MessageFilter()
-	async dmResend(message: Message): Promise<void> {
-		await this.bookingService.sendBookingDetails(message.author, { noStatusMessage: true });
-	}
-
-	@OnDMCommand("rcon")
-	@MessageFilter()
-	async dmRcon(message: Message): Promise<void> {
-		const user = message.author;
-		const userBookings = await this.bookingService.getUserRunningBookings(user.id);
-		if (userBookings.length === 0) {
-			throw new WarningMessage(await this.i18n.t("COMMAND.USER.RCON.NO_SERVER"));
-		}
-		else if (userBookings.length === 1) {
-			const command = message.content || "status";
-			try {
-				const res = await BookingService.sendRconCommandRequest(userBookings[0], command);
-				const embed = MessageService.buildTextMessage(MessageType.SUCCESS, `\`\`\`${res}\`\`\``, "RCON Response");
-				await message.reply("", embed);
-			} catch (error) {
-				this.logger.error("Failed to send rcon command", error);
-				throw new ErrorMessage(await this.i18n.t("COMMAND.USER.RCON.FAILED"));
-			}
-		}
-	}
+	// @OnDMCommand("resend")
+	// @MessageFilter()
+	// async dmResend(message: Message): Promise<void> {
+	// 	await this.bookingService.sendBookingDetails(message.author, { noStatusMessage: true });
+	// }
+	//
+	// @OnDMCommand("rcon")
+	// @MessageFilter()
+	// async dmRcon(message: Message): Promise<void> {
+	// 	const user = message.author;
+	// 	const userBookings = await this.bookingService.getUserRunningBookings(user.id);
+	// 	if (userBookings.length === 0) {
+	// 		throw new WarningMessage(await this.i18n.t("COMMAND.USER.RCON.NO_SERVER"));
+	// 	}
+	// 	else if (userBookings.length === 1) {
+	// 		const command = message.content || "status";
+	// 		try {
+	// 			const res = await BookingService.sendRconCommandRequest(userBookings[0], command);
+	// 			const embed = MessageService.buildTextMessage(MessageType.SUCCESS, `\`\`\`${res}\`\`\``, "RCON Response");
+	// 			await message.reply("", embed);
+	// 		} catch (error) {
+	// 			this.logger.error("Failed to send rcon command", error);
+	// 			throw new ErrorMessage(await this.i18n.t("COMMAND.USER.RCON.FAILED"));
+	// 		}
+	// 	}
+	// }
 }

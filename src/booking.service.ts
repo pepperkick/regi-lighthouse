@@ -415,14 +415,28 @@ export class BookingService {
 	 * @param status
 	 */
 	async handleServerStatusChange(server: Server, status: ServerStatus) {
+		this.logger.log(`Received server (${server._id}) status (${status}) update callback.`);
+
 		const booking = await this.Booking.findOne({ server: server._id });
 
 		if (!booking)
 			throw new NotFoundException();
 
-		if ([ ServerStatus.CLOSED, ServerStatus.IDLE, ServerStatus.FAILED ].includes(status)) {
-			if (booking.status === BookingStatus.RUNNING) return;
+		if (status === ServerStatus.IDLE && booking.status === BookingStatus.RUNNING)
+			return;
 
+		if (status === ServerStatus.IDLE && booking.status === BookingStatus.STARTING) {
+			booking.status = BookingStatus.RUNNING;
+			await booking.save();
+		} else if (status === ServerStatus.CLOSED) {
+			booking.status = BookingStatus.CLOSED;
+			await booking.save();
+		} else if (status === ServerStatus.FAILED) {
+			booking.status = BookingStatus.CLOSED;
+			await booking.save();
+		}
+
+		if ([ ServerStatus.CLOSED, ServerStatus.IDLE, ServerStatus.FAILED ].includes(status)) {
 			let statusMessage, message;
 
 			if (status === ServerStatus.IDLE) {
@@ -444,17 +458,11 @@ export class BookingService {
 			}
 
 			if (status === ServerStatus.IDLE) {
-				booking.status = BookingStatus.RUNNING;
-				await booking.save();
 				await this.sendServerDetailsViaDM(user, server, { statusMessage });
 				await this.messageService.editMessageI18n(statusMessage, MessageType.SUCCESS, "BOOKING.START_SUCCESS");
 			} else if (status === ServerStatus.CLOSED) {
-				booking.status = BookingStatus.CLOSED;
-				await booking.save();
 				await this.messageService.editMessageI18n(statusMessage, MessageType.SUCCESS, "BOOKING.STOP_SUCCESS");
 			} else if (status === ServerStatus.FAILED) {
-				booking.status = BookingStatus.CLOSED;
-				await booking.save();
 				await this.messageService.editMessageI18n(statusMessage, MessageType.ERROR, "BOOKING.SERVER_FAILED");
 			}
 		}
@@ -548,7 +556,7 @@ export class BookingService {
 	 * @param region
 	 */
 	getRegionName(region: string): string {
-		return this.getRegionConfig(region).name;
+		return this.getRegionConfig(region)?.name;
 	}
 
 	/**
@@ -567,7 +575,7 @@ export class BookingService {
 	 * @param tier
 	 */
 	getTierConfig(region: string, tier: string): TierConfig {
-		return this.getRegionConfig(region).tiers[tier];
+		return this.getRegionConfig(region)?.tiers[tier];
 	}
 
 	/**
@@ -723,6 +731,7 @@ export class BookingService {
 		const connectString = `connect ${server.ip}:${server.port}; password ${server.password};`
 		const connectRconString = `${connectString} rcon_password ${server.rconPassword};`
 		const connectTvString = `connect ${server.ip}:${server.tvPort}`;
+		const hiveUrl = `https://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}`;
 
 		return MessageService.buildMessageEmbed(MessageType.SUCCESS)
 			.setTitle("Bookings")
@@ -730,5 +739,6 @@ export class BookingService {
 			.addField("Password", `\`${server.password}\``, true)
 			.addField("RCON Password", `\`${server.rconPassword}\``, true)
 			.addField("Region", `\`${server.region}\``, true)
+			.addField("RCON Control", `[Click here](${hiveUrl}) to access RCON`, false);
 	}
 }

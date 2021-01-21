@@ -116,12 +116,8 @@ export async function parseUserArg(bot: DiscordClient, message: Message, argPos 
 	if (mentionedUser)
 		return mentionedUser;
 
-	try {
-		const guild = await bot.guilds.fetch(message.guild.id);
-		const mentionedUser = await guild.members.fetch(args[argPos]);
-		if (mentionedUser)
-			return mentionedUser;
-	} catch (error) {
-		console.log(error);
-	}
+	const guild = await bot.guilds.fetch(message.guild.id);
+	const userId = await guild.members.fetch(args[argPos]);
+	if (userId)
+		return userId;
 }
