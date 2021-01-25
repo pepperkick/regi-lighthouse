@@ -75,7 +75,7 @@
     },
     "ADMIN": {
       "BOOK": {
-        "USAGE": "\nUsage: \n`book <region> <user> [tier]`\n\n- region: Region for the booking\n- user: User ID or User mention\n- tier: Tier of booking (Default: free)",
+        "USAGE": "\nUsage: \n`book <user> <region> [tier]`\n\n- region: Region for the booking\n- user: User ID or User mention\n- tier: Tier of booking (Default: free)",
         "USER_NOT_FOUND": "Could not find that user",
         "USER_IS_BOT": "Giving bookings to bots may result in world domination. Your welcome! ;)"
       },

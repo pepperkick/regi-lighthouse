@@ -3,6 +3,7 @@
   "token": "",
   "localhost": "",
   "prefix": "",
+  "language": "",
   "channels": {
     "users": "",
     "admin": ""

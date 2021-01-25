@@ -21,7 +21,7 @@ import { BookingAdminService } from "./booking-admin.service";
 			commandPrefix: config.prefix
 		}),
 		I18nModule.forRoot({
-			fallbackLanguage: "en",
+			fallbackLanguage: config.language,
 			parser: I18nJsonParser,
 			parserOptions: {
 				path: path.join(__dirname, '../locales/'),

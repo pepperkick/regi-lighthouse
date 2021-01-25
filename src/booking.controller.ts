@@ -265,6 +265,10 @@ export class BookingController {
 				throw new ErrorMessage(await this.i18n.t("COMMAND.ADMIN.UNBOOK.BOT_HAS_NO_BOOKING"));
 			}
 
+			await this.messageService.replyMessageI18n(
+				message, MessageType.SUCCESS, await this.i18n.t("BOOKING.ADMIN.STOPPING", {
+					args: { user: member.user.tag }
+				}));
 			return await this.bookingService.destroyUserBooking(member.user, { forSomeoneElse: true });
 		}
 
