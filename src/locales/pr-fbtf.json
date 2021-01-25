@@ -18,7 +18,7 @@
     "SERVER_FAILED": "O seu pedido de servidor encontrou um problema. Por favor, relate este acontecido ao suporte técnico.",
     "ALREADY_EXISTS": "Voce já abriu um servidor.\nUse o comando `unbook` para fechar o seu servidor atual.\nSe você já tiver usado o comando, por favor aguarde o fechamento do seu servidor.",
     "RESERVATION_ALREADY_EXISTS": "Você já tem uma reserva.\nUse o comando `reserve cancel` para excluir a sua reserva atual.",
-    "REACHED_LIMIT": "Já atingimos o limite de servidores gratuitos em sua localidade. Por favor, tente novamente mais tarde ou visite <https://www.patreon.com/qixalite> para conseguir acesso a servidores exclusivos.",
+    "REACHED_LIMIT": "Não há mais servidores disponíveis!",
     "PROVIDER_OVERLOADED": "Impossível criar o servidor, tente novamente mais tarde.",
     "ONGOING": "Você não pode fechar o servidor enquanto ele ainda está sendo aberto. Por favor, espere até que o servidor esteja aberto completamente.",
     "NO_DETAILS_DURING_STARTING": "Não é possível enviar os detalhes enquanto o servidor está sendo aberto. Por favor, espere até que o servidor esteja aberto completamente.",
@@ -48,7 +48,7 @@
         "CANNOT_SELF_MULTI_BOOK": "Você não pode abrir vários servidores ao mesmo tempo. Pense nos outros!",
         "USER_IS_BOT": "Abrir servidores para bots pode resultar em dominação mundial. De nada! ;)",
         "MULTI": {
-          "RESTRICTED": "Somente usuários de **Tier 3** podem abrir vários servidores ao mesmo tempo.\nVisite <https://www.patreon.com/qixalite>"
+          "RESTRICTED": "Essa ação não é permitida."
         }
       },
       "RESEND": {
