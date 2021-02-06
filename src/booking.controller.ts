@@ -162,7 +162,7 @@ export class BookingController {
 				throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.INVALID_TIME"));
 			}
 
-			if (seconds < 600) {
+			if (seconds <= 1800) {
 				throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.TOO_SHORT_TIME"));
 			}
 

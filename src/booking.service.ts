@@ -489,9 +489,9 @@ export class BookingService {
 
 		for (const booking of bookingReservations) {
 			const tierConfig = this.getTierConfig(booking.region, booking.tier);
-			const reserve = booking.reservedAt;
 			const earlyStart = tierConfig.earlyStart || 0;
-			const current = moment().subtract(earlyStart, "seconds").toDate();
+			const reserve = moment(booking.reservedAt).subtract(earlyStart, "seconds").toDate();
+			const current = moment().toDate();
 
 			if (current > reserve) {
 				this.logger.log(`Processing reservation ${booking.id}`);

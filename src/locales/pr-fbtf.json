@@ -17,13 +17,13 @@
     "STOP_FAILED": "Não foi possível fechar o seu servidor. Por favor, tente novamente mais tarde.",
     "SERVER_FAILED": "O seu pedido de servidor encontrou um problema. Por favor, relate este acontecido ao suporte técnico.",
     "ALREADY_EXISTS": "Voce já abriu um servidor.\nUse o comando `unbook` para fechar o seu servidor atual.\nSe você já tiver usado o comando, por favor aguarde o fechamento do seu servidor.",
-    "RESERVATION_ALREADY_EXISTS": "Você já tem uma reserva.\nUse o comando `reserve cancel` para excluir a sua reserva atual.",
+    "RESERVATION_ALREADY_EXISTS": "Você já tem uma reserva.\nUse o comando `unreserve` para excluir a sua reserva atual.",
     "REACHED_LIMIT": "Não há mais servidores disponíveis!",
     "PROVIDER_OVERLOADED": "Impossível criar o servidor, tente novamente mais tarde.",
     "ONGOING": "Você não pode fechar o servidor enquanto ele ainda está sendo aberto. Por favor, espere até que o servidor esteja aberto completamente.",
     "NO_DETAILS_DURING_STARTING": "Não é possível enviar os detalhes enquanto o servidor está sendo aberto. Por favor, espere até que o servidor esteja aberto completamente.",
     "FAILED_TO_SEND_DM": "Um erro desconhecido impediu que os detalhes do servidor fossem enviados por mensagem privada. Por favor, contate o suporte técnico.",
-    "FAILED_TO_SEND_PRIVATE_DM": "Não foi possível mandar os detalhes do servidor por mensagem privada. Isto geralmente ocorre por causa das suas configurações de privacidade no Discord. Acesse <https://docs.qixalite.com/support/tf2/#not-receiving-bot-messages>\nUse o comando `resend` para solicitar os detalhes novamente.",
+    "FAILED_TO_SEND_PRIVATE_DM": "Não foi possível mandar os detalhes do servidor por mensagem privada. Isto geralmente ocorre por causa das suas configurações de privacidade no Discord. Acesse <https://docs.qixalite.com/support/help/services/bk-service.html#not-receiving-bot-messages>\nUse o comando `resend` para solicitar os detalhes novamente.",
     "RESERVE": {
       "CREATED": "Sua reserva de servidor foi criada.\nVocê receberá os destalhes da sua reserva em aproximadamente **{time}**",
       "NOT_ALLOWED": "Atualmente, as reservas nesse nível não são autorizadas."
