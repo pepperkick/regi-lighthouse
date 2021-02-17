@@ -1,35 +1,97 @@
 {
-  "Booking Start": "Your server is being booked...\nThis may take some time.\nDetails will be sent via private message when the server is ready.",
-  "Booking Already Exists": "You have already booked a server\nUse `unbook` command to remove your booking.\nIf you recently used 'unbook' then please wait until the previous server has been closed.",
-  "Booking Limit Reached": "The maximum amount of free bookable servers for your location has been reached. Please try again later or you can check-out <https://www.patreon.com/qixalite> to gain access to our exclusive server pool.",
-  "Booking Failed": "Your server has failed to start. Please try again later.",
-  "Booking Details Not Found": "No booking found with that ID.",
-  "Booking Details Sent": "Your server details have been sent via private message.\nPlease open a ticket in #support if you have any issues.",
-  "Booking Details Failed to Send": "Failed to send server details via private message due to unknown error. Please contact support.",
-  "Booking Details Failed to Send due to Private DM": "Failed to send server details via private message. This is generally due to privacy settings in discord. Check-out <https://docs.qixalite.com/support/tf2/#not-receiving-bot-messages>",
-  "Multi Booking Limit Reached": "You have reached maximum number of multi booking that is allowed.",
-  "Multi Booking Restricted": "Multiple bookings is only accessible to **Tier 3** subscribers. Check-out <https://www.patreon.com/qixalite>",
-  "Unbooking Not Found": "You do not have any booking with us.",
-  "Unbooking Failed": "Your server has failed to stop. Please try again later.",
-  "Unbooking Success": "Your server has been closed. Thank you for using our service, if you have any suggestions you can post them in #feedback.",
-  "Admin Booking Start": "Server will be booked and details will be sent via private message to {{user}}",
-  "Admin Booking Failed": "Server booking for the user has failed to start. Please try again later.",
-  "Admin Unbooking Start": "{{user}} Server will be unbooked",
-  "Admin Unbooking Failed": "Failed to stop the user's server. Please try again later.",
-  "Unbooking Start": "Your server is being closed...\\nThis may take some time.\nPlease wait until unbooking completes before booking again.",
+  "REGION": {
+    "UNKNOWN": "Unknown region or currently that region is not supported.",
+    "RESTRICTED": "Currently **{region}** region is only allowed to few testers, contact us if you are interested to try it."
+  },
 
-  "User Not Found": "Could not find that user",
-  "User Is Bot": "Giving bookings to bots may result in world domination. Your welcome! ;)",
-  "Bot Has No Booking": "We bots cannot have bookings :(",
+  "TIER": {
+    "UNKNOWN": "Unknown tier."
+  },
 
-  "Unknown Region": "Unknown region or currently that region is not supported.",
-  "Restricted Region": "Currently {{region}} region is only allowed to few testers, contact us if you are interested to try it.",
-  "Unknown Tier": "That is an unknown tier.",
+  "BOOKING": {
+    "STARTING": "Your server is being booked...\nThis may take some time.\nDetails will be sent via private message when the server is ready.",
+    "STOPPING": "Your server is being closed...\nThis may take some time.\nPlease wait until the server closes before booking again.",
+    "START_SUCCESS": "Your server details have been sent via private message.\nPlease open a ticket in #support if you have any issues.",
+    "START_FAILED": "Your server has failed to start. Please try again later.",
+    "STOP_SUCCESS": "Your server has been closed. Thank you for using our service, if you have any suggestions you can post them in #feedback.",
+    "STOP_FAILED": "Your server has failed to stop. Please try again later.",
+    "SERVER_FAILED": "Your server request has failed. Please report this issue to support.",
+    "ALREADY_EXISTS": "You have already booked a server\nUse `unbook` command to remove your booking.\nIf you recently used 'unbook' then please wait until the previous server has been closed.",
+    "RESERVATION_ALREADY_EXISTS": "You already have a reservation.\nUse `unreserve` to remove your existing reservation.",
+    "REACHED_LIMIT": "The maximum amount of free bookable servers for your location has been reached. Please try again later or you can check-out <https://www.patreon.com/qixalite> to gain access to our exclusive server pool.",
+    "PROVIDER_OVERLOADED": "Unable to create a server, please try again later.",
+    "ONGOING": "You cannot close the booking while it is starting. Please wait until the server has started.",
+    "NO_DETAILS_DURING_STARTING": "Cannot send server details while the server is starting. Please wait until the server has started.",
+    "FAILED_TO_SEND_DM": "Failed to send server details via private message due to unknown error. Please contact support.",
+    "FAILED_TO_SEND_PRIVATE_DM": "Failed to send server details via private message. This is generally due to privacy settings in discord. Check-out <https://docs.qixalite.com/support/help/services/bk-service.html#not-receiving-bot-messages>\nUse `resend` command to try sending the details again.",
+    "RESERVE": {
+      "CREATED": "Created your booking reservation.\nYou will receive your server details in around **{time}**",
+      "NOT_ALLOWED": "Currently reservation in this region and tier is not allowed."
+    },
+    "ADMIN": {
+      "STARTING": "Server will be booked and details will be sent via private message to {user}",
+      "START_FAILED": "Server booking for the user has failed to start. Please try again later.",
+      "STOPPING": "**{user}** Server will be unbooked",
+      "STOP_FAILED": "Failed to stop the user's server. Please try again later.",
+      "NOT_FOUND": "User **{user}** does not have any active booking.",
+      "ONGOING": "The user **{user}** has a booking that is starting. Please wait until the server has started.",
+      "ALREADY_EXISTS": "The user already has an active booking."
+    }
+  },
 
-  "Command Unbook Usage": "Usage: unbook\nYou can only unbook your own server.",
+  "COMMAND": {
+    "ERROR": "Looks like there are some issues. Please try again later.",
 
-  "Admin Command Book Usage": "Usage: book <discord user> [region] [tier]",
-  "Admin Command Unbook Usage": "Usage: unbook <discord user>",
-
-  "Command Error": "Looks like there are some issues. Please try again later."
+    "USER": {
+      "BOOK": {
+        "USAGE": "\nUsage: \n`book <region>`\n\n- region: Region for the booking",
+        "CANNOT_SELF_MULTI_BOOK": "You cannot use multi booking for yourself. Think about the others!",
+        "USER_IS_BOT": "Giving bookings to bots may result in world domination. Your welcome! ;)",
+        "MULTI": {
+          "RESTRICTED": "Multiple bookings is only accessible by **Tier 3** subscribers.\nCheck-out <https://www.patreon.com/qixalite>"
+        }
+      },
+      "RESEND": {
+        "NO_BOOKING": "You do not have any booking with us."
+      },
+      "UNBOOK": {
+        "NO_BOOKING": "You do not have any booking with us."
+      },
+      "RCON": {
+        "NO_SERVER": "You do not have any active servers to use RCON.",
+        "FAILED": "Failed to execute the command in your server. Please try again later."
+      },
+      "RESERVE": {
+        "USAGE": "\nUsage: \n`reserve <region> <time>`\n\n- region: Region for reservation\n- time: Relative time (Examples: 1h30m, 30m, 1h)",
+        "INVALID_TIME": "The time you mentioned is invalid.",
+        "TOO_SHORT_TIME": "The time you mentioned is too short.",
+        "TOO_LONG_TIME": "The time you mentioned is too long.",
+        "RESTRICTED": "Booking reservation is accessible by **Tier 2+** subscribers.\nCheck-out <https://www.patreon.com/qixalite>"
+      },
+      "UNRESERVE": {
+        "USER_HAS_NO_RESERVATION": "You have no reservation.",
+        "CANCELLED": "Your reservation has been cancelled."
+      }
+    },
+    "ADMIN": {
+      "BOOK": {
+        "USAGE": "\nUsage: \n`book <user> <region> [tier]`\n\n- region: Region for the booking\n- user: User ID or User mention\n- tier: Tier of booking (Default: free)",
+        "USER_NOT_FOUND": "Could not find that user",
+        "USER_IS_BOT": "Giving bookings to bots may result in world domination. Your welcome! ;)"
+      },
+      "UNBOOK": {
+        "USAGE": "\nUsage: \n`unbook <user>`\n\n- user: User ID or User mention",
+        "USER_NOT_FOUND": "Could not find that user",
+        "BOT_HAS_NO_BOOKING": "We bots cannot have bookings :(",
+        "USER_HAS_NO_BOOKING": "User **{user}** does not have any active booking."
+      },
+      "STATUS": {
+        "NO_ACTIVE_BOOKINGS": "Currently there are no active bookings.",
+        "USER_NO_BOOKINGS": "User **{user}** has bookings.",
+        "USER_NO_ACTIVE_BOOKINGS": "User **{user}** has no active bookings.\nHere are the user's past bookings or upcoming reservations.",
+        "REGION_NO_BOOKINGS": "**{region}** region has no bookings.",
+        "REGION_NO_ACTIVE_BOOKINGS": "**{region}** region has no active bookings.\nHere are past bookings or upcoming reservations in the region."
+      }
+    }
+  }
 }

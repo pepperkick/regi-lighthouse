@@ -1,36 +1,34 @@
 {
-  "token": "NzQyOTkzMTIyMTI4Mjk4MDU2.XzOMRA.qr8auVxGyQTzU2FdHcvmoyVH3co",
+  "mongodbUri": "",
+  "token": "",
+  "localhost": "",
   "prefix": "",
-  "disableGlobalCommands": true,
-  "lighthouseHost": "http://localhost:3000",
+  "language": "",
+  "channels": {
+    "users": "",
+    "admin": ""
+  },
   "bot": {
-    "name": "Qixalite",
-    "avatar": "https://cdn.discordapp.com/attachments/743005170996215839/743077007889268736/QixaliteLogoDiscord3.png",
+    "name": "",
+    "avatar": "",
     "image": "",
     "footer": {
-      "text": "Kindest Regards, Qixalite",
+      "text": "",
       "icon": ""
     }
   },
-  "channels": {
-    "booking": "743009150228889671",
-    "admin": "743009150228889671"
-  },
-  "express": {
-    "host": "http://localhost",
-    "port": 3100
+  "lighthouse": {
+    "host": "",
+    "clientId": "",
+    "clientSecret": ""
   },
   "roles": {
     "premium_tier_1": "",
     "premium_tier_2": "",
     "premium_tier_3": "",
-    "beta_sp_bookings": "",
-    "beta_na_bookings": "",
-    "beta_au_bookings": "",
-    "beta_in_bookings": "",
     "league_partner": ""
   },
-  "preferences": {
-    "tier_3_multi_booking_limit": 2
+  "game": "",
+  "regions": {
   }
 }
