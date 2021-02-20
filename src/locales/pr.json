@@ -1,0 +1,97 @@
+{
+  "REGION": {
+    "UNKNOWN": "Região desconhecida ou atualmente indisponível.",
+    "RESTRICTED": "Atualmente, a região **{region}** somente está disponível para testes, contate-nos se você estiver interessado em participar."
+  },
+
+  "TIER": {
+    "UNKNOWN": "Nível desconhecido."
+  },
+
+  "BOOKING": {
+    "STARTING": "O seu servidor está sendo aberto...\nIsto pode levar certo tempo.\nOs detalhes serão enviados por mensagem privada quando o servidor estiver pronto.",
+    "STOPPING": "O seu servidor está sendo fechado...\nIsto pode levar certo tempo.\nPor favor, aguarde o fechamento antes de abrir um novo servidor.",
+    "START_SUCCESS": "Os detalhes do seu servidor foram enviados por mensagem privada.\nPor favor, crie um ticket de suporte técnico se houver problemas.",
+    "START_FAILED": "Houve um erro na inicialização do servidor. Por favor, tente novamente mais tarde.",
+    "STOP_SUCCESS": "O seu servidor foi fechado. Obrigado por usar nosso serviço. Se você tiver alguma sugestão, agradecemos o feedback.",
+    "STOP_FAILED": "Não foi possível fechar o seu servidor. Por favor, tente novamente mais tarde.",
+    "SERVER_FAILED": "O seu pedido de servidor encontrou um problema. Por favor, relate este acontecido ao suporte técnico.",
+    "ALREADY_EXISTS": "Voce já abriu um servidor.\nUse o comando `unbook` para fechar o seu servidor atual.\nSe você já tiver usado o comando, por favor aguarde o fechamento do seu servidor.",
+    "RESERVATION_ALREADY_EXISTS": "Você já tem uma reserva.\nUse o comando `unreserve` para excluir a sua reserva atual.",
+    "REACHED_LIMIT": "Não há mais servidores disponíveis!",
+    "PROVIDER_OVERLOADED": "Impossível criar o servidor, tente novamente mais tarde.",
+    "ONGOING": "Você não pode fechar o servidor enquanto ele ainda está sendo aberto. Por favor, espere até que o servidor esteja aberto completamente.",
+    "NO_DETAILS_DURING_STARTING": "Não é possível enviar os detalhes enquanto o servidor está sendo aberto. Por favor, espere até que o servidor esteja aberto completamente.",
+    "FAILED_TO_SEND_DM": "Um erro desconhecido impediu que os detalhes do servidor fossem enviados por mensagem privada. Por favor, contate o suporte técnico.",
+    "FAILED_TO_SEND_PRIVATE_DM": "Não foi possível mandar os detalhes do servidor por mensagem privada. Isto geralmente ocorre por causa das suas configurações de privacidade no Discord. Acesse <https://docs.qixalite.com/support/help/services/bk-service.html#not-receiving-bot-messages>\nUse o comando `resend` para solicitar os detalhes novamente.",
+    "RESERVE": {
+      "CREATED": "Sua reserva de servidor foi criada.\nVocê receberá os destalhes da sua reserva em aproximadamente **{time}**",
+      "NOT_ALLOWED": "Atualmente, as reservas nesse nível não são autorizadas."
+    },
+    "ADMIN": {
+      "STARTING": "Seu servidor será aberto e os detalhes serão encaminhados por mensagem privada para {user}",
+      "START_FAILED": "Houve um erro no servidor que seria aberto para o usuário indicado por você. Por favor, tente novamente mais tarde.",
+      "STOPPING": "**{user}** Servidor será fechado.",
+      "STOP_FAILED": "Não foi possível fechar o servidor do usuário. Por favor, tente novamente mais tarde.",
+      "NOT_FOUND": "O usuário **{user}** não tem nenhum servidor ativo.",
+      "ONGOING": "O usuário **{user}** tem um servidor que está sendo aberto. Por favor, aguarde até que o servidor seja aberto.",
+      "ALREADY_EXISTS": "O usuário já tem um servidor ativo."
+    }
+  },
+
+  "COMMAND": {
+    "ERROR": "Parece que houve problemas. Por favor, tente novamente mais tarde.",
+
+    "USER": {
+      "BOOK": {
+        "USAGE": "\nInstruções de uso: \n`book <região>`\n\n- Região: região do servidor",
+        "CANNOT_SELF_MULTI_BOOK": "Você não pode abrir vários servidores ao mesmo tempo. Pense nos outros!",
+        "USER_IS_BOT": "Abrir servidores para bots pode resultar em dominação mundial. De nada! ;)",
+        "MULTI": {
+          "RESTRICTED": "Essa ação não é permitida."
+        }
+      },
+      "RESEND": {
+        "NO_BOOKING": "Você não tem servidor aberto conosco."
+      },
+      "UNBOOK": {
+        "NO_BOOKING": "Você não tem servidor aberto conosco."
+      },
+      "RCON": {
+        "NO_SERVER": "Você não tem servidores abertos para usar RCON.",
+        "FAILED": "Houve um erro na execução do comando de RCON no seu servidor. Por favor, tente novamente mais tarde."
+      },
+      "RESERVE": {
+        "USAGE": "\nInstruções de uso: \n`reserve <região> <horário>`\n\n- Região: região do servidor\n- Horário: horário de duração (Exemplos: 1h30m, 30m, 1h)",
+        "INVALID_TIME": "O horário que você indicou é inválido.",
+        "TOO_SHORT_TIME": "O horário que você indicou é muito curto.",
+        "TOO_LONG_TIME": "O horário que você indicou é muito longo.",
+        "RESTRICTED": "Reservas de servidores somente são disponíveis para usuários de **Tier 2+** .\nVisite <https://www.patreon.com/qixalite>"
+      },
+      "UNRESERVE": {
+        "USER_HAS_NO_RESERVATION": "Você não tem reserva.",
+        "CANCELLED": "Sua reserva foi cancelada."
+      }
+    },
+    "ADMIN": {
+      "BOOK": {
+        "USAGE": "\nInstrucões de uso: \n`book <região> <usuário> [tier]`\n\n- Região: região do servidor\n- Usuário: User ID ou User mention\n- tier: nível do servidor (Padrão: gratuito)",
+        "USER_NOT_FOUND": "Não foi possível achar o usuário indicado",
+        "USER_IS_BOT": "Abrir servidores para bots pode resultar em dominação mundial. De nada! ;)"
+      },
+      "UNBOOK": {
+        "USAGE": "\nInstruções de uso: \n`unbook <usuário>`\n\n- Usuário: User ID ou User mention",
+        "USER_NOT_FOUND": "Não foi possível achar o usuário indicado",
+        "BOT_HAS_NO_BOOKING": "Bots não podem receber servidores :(",
+        "USER_HAS_NO_BOOKING": "O usuário **{user}** não tem nenhum servidor ativo."
+      },
+      "STATUS": {
+        "NO_ACTIVE_BOOKINGS": "Não há servidores ativos neste momento.",
+        "USER_NO_BOOKINGS": "O usuário **{user}** tem servidor ativo.",
+        "USER_NO_ACTIVE_BOOKINGS": "O usuário **{user}** não tem servidores ativos.\nAqui estão os servidores que já foram abertos por esse usuário ou suas próximas reservas.",
+        "REGION_NO_BOOKINGS": "A região **{region}** não tem servidores ativos.",
+        "REGION_NO_ACTIVE_BOOKINGS": "A região **{region}** não tem servidores atigos.\nAqui estão os servidores que já foram abertos nessa região ou as próximas reservas."
+      }
+    }
+  }
+}
