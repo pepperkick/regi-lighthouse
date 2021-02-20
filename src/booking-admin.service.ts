@@ -209,7 +209,7 @@ export class BookingAdminService {
 		else {
 			let desc = "```";
 			for (const booking of activeBookings) {
-				desc += `${booking.id} [${booking.region}, ${booking.tier}]\m`;
+				desc += `${booking.id} [${booking.region}, ${booking.tier}]\n`;
 			}
 			desc += "```";
 
