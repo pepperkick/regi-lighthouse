@@ -347,8 +347,9 @@ export class BookingService {
 	 * Send booking details
 	 *
 	 * @param message
+	 * @param filter
 	 */
-	async sendBookingStatus(message: Message) {
+	async sendBookingStatus(message: Message, filter: string = undefined) {
 		const embed = MessageService.buildTextMessage(MessageType.INFO, "", "Status");
 		const regions = config.regions;
 
@@ -367,14 +368,35 @@ export class BookingService {
 
 		embed.setFooter(`[F]: Free [P]: Premium\n[R]: Reservation Allowed\n${embed.footer.text}`);
 
-		// Get all bookings
+		// Get active bookings
 		const bookings = await this.Booking.find(
 			{ $or: BOOKING_ACTIVE_STATUS_CONDITION });
 
 		if (bookings.length !== 0)
 			embed.addField("Active", bookings.length)
 
-		const orderedRegions = Object.keys(regions).sort();
+		const keys = Object.keys(regions);
+		let filteredRegions = [];
+
+		if (filter) {
+			for (const i of keys) {
+				const region: RegionConfig = regions[i];
+				const tags = region.tags;
+
+				if (tags?.includes(filter.toLowerCase())) {
+					filteredRegions.push(i);
+				}
+			}
+		} else {
+			filteredRegions = keys
+		}
+
+		if (filteredRegions.length === 0) {
+			embed.addField("No region found", "Could not find any region with that tag. Please try something else.", true);
+			return await message.reply("", embed);
+		}
+
+		const orderedRegions = filteredRegions.sort();
 		for (const i of orderedRegions) {
 			const region: RegionConfig = regions[i];
 			if (region.hidden) continue;

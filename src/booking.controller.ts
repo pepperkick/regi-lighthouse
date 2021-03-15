@@ -192,7 +192,12 @@ export class BookingController {
 	@OnUserCommand("status")
 	@MessageFilter()
 	async userStatus(message: Message): Promise<void> {
-		await this.bookingService.sendBookingStatus(message);
+		const args = parseMessageArgs(message);
+
+		if (args.length === 0)
+			await this.bookingService.sendBookingStatus(message);
+		else if (args.length === 1)
+			await this.bookingService.sendBookingStatus(message, args[0]);
 	}
 
 	@OnAdminCommand("book")

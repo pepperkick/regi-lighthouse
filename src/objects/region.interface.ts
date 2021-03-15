@@ -7,6 +7,7 @@ export interface RegionConfig {
 	tiers: {
 		[key: string]: TierConfig
 	}
+	tags: string[]
 }
 
 export interface TierConfig {
