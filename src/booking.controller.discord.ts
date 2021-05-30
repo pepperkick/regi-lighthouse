@@ -22,8 +22,8 @@ import { BookingOptions } from "./objects/booking.interface";
 import { MessageType } from "./objects/message-types.enum";
 
 @Controller()
-export class BookingController {
-	private readonly logger = new Logger(BookingController.name);
+export class BookingControllerDiscord {
+	private readonly logger = new Logger(BookingControllerDiscord.name);
 
 	constructor(
 		private readonly bookingService: BookingService,
@@ -31,13 +31,7 @@ export class BookingController {
 		private readonly messageService: MessageService,
 		private readonly bot: DiscordClient,
 		private readonly i18n: I18nService
-	) {
-	}
-
-	@Post("/booking/callback")
-	async callback(@Body() body: Server, @Query("status") status: ServerStatus): Promise<void> {
-		await this.bookingService.handleServerStatusChange(body, status);
-	}
+	) {}
 
 	@On({event: 'ready'})
 	onReady(): void {

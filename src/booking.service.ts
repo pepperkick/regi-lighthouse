@@ -16,7 +16,7 @@ import { MessageType } from "./objects/message-types.enum";
 import { ServerStatus } from "./objects/server-status.enum";
 import { Server } from "./objects/server.interface";
 import { BookingOptions, RequestOptions } from "./objects/booking.interface";
-import { RegionConfig, TierConfig } from "./objects/region.interface";
+import { RegionConfig, Region, RegionTier } from "./objects/region.interface";
 import { getDateFormattedRelativeTime } from "./utils";
 
 @Injectable()
@@ -380,7 +380,7 @@ export class BookingService {
 
 		if (filter) {
 			for (const i of keys) {
-				const region: RegionConfig = regions[i];
+				const region: Region = regions[i];
 				const tags = region.tags;
 
 				if (tags?.includes(filter.toLowerCase())) {
@@ -398,7 +398,7 @@ export class BookingService {
 
 		const orderedRegions = filteredRegions.sort();
 		for (const i of orderedRegions) {
-			const region: RegionConfig = regions[i];
+			const region: Region = regions[i];
 			if (region.hidden) continue;
 
 			const tiers = region.tiers;
@@ -555,6 +555,13 @@ export class BookingService {
 	}
 
 	/**
+	 * Return the regions
+	 */
+	getRegions(): RegionConfig {
+		return config.regions;
+	}
+
+	/**
 	 * Return the region slug
 	 *
 	 * @param region
@@ -568,7 +575,7 @@ export class BookingService {
 	 *
 	 * @param region
 	 */
-	getRegionConfig(region: string): RegionConfig {
+	getRegionConfig(region: string): Region {
 		return config.regions[this.getRegionSlug(region)];
 	}
 
@@ -596,7 +603,7 @@ export class BookingService {
 	 * @param region
 	 * @param tier
 	 */
-	getTierConfig(region: string, tier: string): TierConfig {
+	getTierConfig(region: string, tier: string): RegionTier {
 		return this.getRegionConfig(region)?.tiers[tier];
 	}
 

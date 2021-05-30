@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BookingController } from './booking.controller';
+import { BookingControllerDiscord } from './booking.controller.discord';
 import { BookingService } from './booking.service';
 import { DiscordModule } from "discord-nestjs";
 import { I18nJsonParser, I18nModule } from "nestjs-i18n";
@@ -9,6 +9,8 @@ import { Booking, BookingSchema } from "./booking.model";
 import * as config from "../config.json";
 import * as path from 'path';
 import { BookingAdminService } from "./booking-admin.service";
+import { BookingControllerRest } from "./booking.controller.rest";
+import { BookingControllerTcp } from "./booking.controller.tcp";
 
 @Module({
 	imports: [
@@ -29,7 +31,7 @@ import { BookingAdminService } from "./booking-admin.service";
 			}
 		}),
 	],
-	controllers: [ BookingController ],
+	controllers: [ BookingControllerDiscord, BookingControllerRest, BookingControllerTcp ],
 	providers: [ BookingService, BookingAdminService, MessageService ],
 })
 export class AppModule {
