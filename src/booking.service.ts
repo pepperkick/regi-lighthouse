@@ -6,7 +6,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { GuildMember, Message, TextChannel, User } from "discord.js";
 import { I18nService } from "nestjs-i18n";
 import { WarningMessage } from "./objects/message.exception";
-import { Model } from "mongoose";
+import { CastError, Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { Booking } from "./booking.model";
 import { BOOKING_ACTIVE_STATUS_CONDITION, BookingStatus } from "./objects/booking-status.enum";
@@ -16,7 +16,7 @@ import { MessageType } from "./objects/message-types.enum";
 import { ServerStatus } from "./objects/server-status.enum";
 import { Server } from "./objects/server.interface";
 import { BookingOptions, RequestOptions } from "./objects/booking.interface";
-import { RegionConfig, Region, RegionTier } from "./objects/region.interface";
+import { Regions, Region, RegionTier } from "./objects/region.interface";
 import { getDateFormattedRelativeTime } from "./utils";
 
 @Injectable()
@@ -54,7 +54,51 @@ export class BookingService {
 	 * Get booking by ID
 	 */
 	async getById(id: string): Promise<Booking> {
-		return this.Booking.findById(id);
+		try {
+			return await this.Booking.findById(id);
+		} catch (error) {
+			this.logger.error(`Failed to find booking with ID '${id}'`, error)
+			throw new NotFoundException(`No booking found with ID '${id}'`)
+		}
+	}
+
+	/**
+	 * Get all active bookings
+	 */
+	async getActiveBookings(): Promise<Booking[]> {
+		return this.Booking.find({ $or: BOOKING_ACTIVE_STATUS_CONDITION });
+	}
+
+	/**
+	 * Get user's active bookings
+	 */
+	async getActiveUserBookings(user: string): Promise<Booking[]> {
+		return this.Booking.find(
+			{ bookingFor: user, $or: BOOKING_ACTIVE_STATUS_CONDITION });
+	}
+
+	/**
+	 * Get a region active bookings
+	 */
+	async getActiveRegionBookings(region: string): Promise<Booking[]> {
+		return this.Booking.find(
+			{ region, $or: BOOKING_ACTIVE_STATUS_CONDITION });
+	}
+
+	/**
+	 * Get a region and tier active bookings
+	 */
+	async getActiveRegionTierBookings(region: string, tier: string): Promise<Booking[]> {
+		return this.Booking.find(
+			{ region, tier, $or: BOOKING_ACTIVE_STATUS_CONDITION });
+	}
+
+	/**
+	 * Get user's running bookings
+	 */
+	async getUserRunningBookings(user: string): Promise<Booking[]> {
+		return this.Booking.find(
+			{ bookingFor: user, status: BookingStatus.RUNNING });
 	}
 
 	/**
@@ -120,7 +164,7 @@ export class BookingService {
 		const { region, tier } = options
 
 		// Check if the user already has booking
-		const userBookings = await this.getUserBookings(options.bookingFor.id);
+		const userBookings = await this.getActiveUserBookings(options.bookingFor.id);
 		if (userBookings.length !== 0)
 			throw new WarningMessage(await this.i18n.t("BOOKING.ALREADY_EXISTS"));
 
@@ -264,7 +308,7 @@ export class BookingService {
 		this.logger.log(`Received user closing request from ${user.id}`);
 
 		// Check if the user already has booking
-		const userBookings = await this.getUserBookings(user.id);
+		const userBookings = await this.getActiveUserBookings(user.id);
 		if (userBookings.length === 0) {
 			if (!options?.forSomeoneElse)
 				throw new WarningMessage(await this.i18n.t("COMMAND.USER.UNBOOK.NO_BOOKING"));
@@ -329,7 +373,7 @@ export class BookingService {
 	 */
 	async sendBookingDetails(user: User, options?: { noStatusMessage: boolean }) {
 		// Check if the user already has booking
-		const userBookings = await this.getUserBookings(user.id)
+		const userBookings = await this.getActiveUserBookings(user.id)
 
 		if (userBookings.length === 0)
 			throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESEND.NO_BOOKING"));
@@ -354,7 +398,7 @@ export class BookingService {
 		const regions = config.regions;
 
 		// Get user's booking if they have it
-		const userBookings = await this.getUserBookings(message.author.id);
+		const userBookings = await this.getActiveUserBookings(message.author.id);
 		if (userBookings.length !== 0) {
 			embed.setDescription(`You currently have an active booking at ${regions[userBookings[0].region].name}`);
 		}
@@ -369,8 +413,7 @@ export class BookingService {
 		embed.setFooter(`[F]: Free [P]: Premium\n[R]: Reservation Allowed\n${embed.footer.text}`);
 
 		// Get active bookings
-		const bookings = await this.Booking.find(
-			{ $or: BOOKING_ACTIVE_STATUS_CONDITION });
+		const bookings = await this.getActiveBookings()
 
 		if (bookings.length !== 0)
 			embed.addField("Active", bookings.length)
@@ -556,9 +599,41 @@ export class BookingService {
 
 	/**
 	 * Return the regions
+	 *
+	 * Process each region and tier to find inUse count
 	 */
-	getRegions(): RegionConfig {
-		return config.regions;
+	async getRegions(region: string): Promise<Regions> {
+		const regions = config.regions;
+		const outputRegions = {}
+		const activeBookings = await this.getActiveBookings();
+		let keys = Object.keys(regions);
+
+		if (region !== "") {
+			keys = [ region ];
+		}
+
+		for (const i of keys) {
+			const region: Region = regions[i];
+
+			if (!region)
+				continue
+
+			const regionBookings = activeBookings.filter(booking => booking.region === i);
+			const tiers = region.tiers
+			const tierKeys = Object.keys(tiers)
+
+			for (const t of tierKeys) {
+				const tierBookings = regionBookings.filter(booking => booking.tier === t);
+				regions[i].tiers[t].inUse = tierBookings.length
+				outputRegions[i] = regions[i]
+			}
+		}
+
+		if (Object.keys(outputRegions).length === 0) {
+			throw new NotFoundException(`No region found with key '${keys}'`)
+		}
+
+		return outputRegions;
 	}
 
 	/**
@@ -631,22 +706,6 @@ export class BookingService {
 	}
 
 	/**
-	 * Get user's active bookings
-	 */
-	async getUserBookings(user: string): Promise<Booking[]> {
-		return this.Booking.find(
-			{ bookingFor: user, $or: BOOKING_ACTIVE_STATUS_CONDITION });
-	}
-
-	/**
-	 * Get user's active bookings
-	 */
-	async getUserRunningBookings(user: string): Promise<Booking[]> {
-		return this.Booking.find(
-			{ bookingFor: user, status: BookingStatus.RUNNING });
-	}
-
-	/**
 	 * Check if the region and tier has not reached booking limit
 	 *
 	 * @param region
@@ -654,10 +713,7 @@ export class BookingService {
 	 */
 	async isRegionTierAvailable(region: string, tier: string): Promise<boolean> {
 		const tierConfig = this.getTierConfig(region, tier);
-
-		const runningBookings = await this.Booking.find(
-			{ region, tier, $or: BOOKING_ACTIVE_STATUS_CONDITION });
-
+		const runningBookings = await this.getActiveRegionTierBookings(region, tier);
 		return runningBookings.length < tierConfig.limit;
 	}
 

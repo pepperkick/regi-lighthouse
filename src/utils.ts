@@ -3,6 +3,38 @@ import * as moment from "moment";
 import { DiscordClient, OnCommand } from "discord-nestjs";
 import { DMChannel, GuildMember, Message, User } from "discord.js";
 import { MessageException } from "./objects/message.exception";
+import { HttpException } from "@nestjs/common";
+
+interface Response<T> {
+	status: number,
+	message?: string,
+	response?: T
+}
+
+export function TransportResponse<T>() {
+	return (target: Object, propertyKey: string, descriptor: PropertyDescriptor) => {
+		const original = descriptor.value;
+
+		descriptor.value = async function (...args): Promise<Response<T> | HttpException> {
+			try {
+				const response: T = await original.apply(this, args);
+
+				return {
+					response,
+					status: 200
+				};
+			} catch (error) {
+				if (error instanceof HttpException)
+					return error
+				else
+					return {
+						status: 500,
+						message: error.message
+					}
+			}
+		}
+	}
+}
 
 export function OnUserCommand(name: string) {
 	return OnCommand({

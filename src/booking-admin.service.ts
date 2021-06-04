@@ -7,7 +7,7 @@ import { MessageType } from "./objects/message-types.enum";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Booking } from "./booking.model";
-import { BOOKING_ACTIVE_STATUS_CONDITION, BookingStatus } from "./objects/booking-status.enum";
+import { BookingStatus } from "./objects/booking-status.enum";
 import { DiscordClient } from "discord-nestjs";
 import { ServerStatus } from "./objects/server-status.enum";
 import { BookingOptions } from "./objects/booking.interface";
@@ -38,7 +38,7 @@ export class BookingAdminService {
 		this.logger.log(`Validating admin booking request from ${options.bookingBy.id} for ${options.bookingFor.id} at region ${region}`);
 
 		// Check if the user already has booking
-		const userBookings = await this.bookingService.getUserBookings(options.bookingFor.id);
+		const userBookings = await this.bookingService.getActiveUserBookings(options.bookingFor.id);
 		if (userBookings.length !== 0)
 			throw new WarningMessage(await this.i18n.t("BOOKING.ADMIN.ALREADY_EXISTS"));
 
@@ -61,8 +61,7 @@ export class BookingAdminService {
 		const embed = MessageService.buildTextMessage(MessageType.INFO, "", "Status");
 
 		// Get all active bookings
-		const bookings = await this.Booking.find(
-			{ $or: BOOKING_ACTIVE_STATUS_CONDITION });
+		const bookings = await this.bookingService.getActiveBookings();
 
 		if (bookings.length !== 0) {
 			embed.addField("Active", bookings.length)
@@ -108,8 +107,7 @@ export class BookingAdminService {
 		embed.addField("Total Bookings", bookings.length);
 
 		// Get all active bookings by user
-		const activeBookings = await this.Booking.find(
-			{ bookingFor: user.id, $or: BOOKING_ACTIVE_STATUS_CONDITION });
+		const activeBookings = await this.bookingService.getActiveUserBookings(user.id)
 
 		if (activeBookings.length === 0) {
 			let desc = await this.i18n.t("COMMAND.ADMIN.STATUS.USER_NO_ACTIVE_BOOKINGS", {
@@ -185,8 +183,7 @@ export class BookingAdminService {
 		embed.addField("Total Bookings", bookings.length);
 
 		// Get all active bookings in the region
-		const activeBookings = await this.Booking.find(
-			{ region, $or: BOOKING_ACTIVE_STATUS_CONDITION });
+		const activeBookings = await this.bookingService.getActiveRegionBookings(region);
 
 		if (activeBookings.length === 0) {
 			let desc = await this.i18n.t("COMMAND.ADMIN.STATUS.REGION_NO_ACTIVE_BOOKINGS", {
