@@ -18,6 +18,7 @@ import { Server } from "./objects/server.interface";
 import { BookingOptions, RequestOptions } from "./objects/booking.interface";
 import { Regions, Region, RegionTier } from "./objects/region.interface";
 import { getDateFormattedRelativeTime } from "./utils";
+import { Game } from "./objects/game.enum";
 
 @Injectable()
 export class BookingService {
@@ -525,6 +526,19 @@ export class BookingService {
 			if (status === ServerStatus.IDLE) {
 				await this.sendServerDetailsViaDM(user, server, { statusMessage });
 				await this.messageService.editMessageI18n(statusMessage, MessageType.SUCCESS, "BOOKING.START_SUCCESS");
+
+				// Workaround: Set logstf API key to kaiend for binarylane to fix logs not uploading issue.
+				// Send a RCON command if game is tf2-comp and server provider contains "binarylane"
+				if (server.game === Game.TF2_COMP && server.provider.includes("binarylane")) {
+					const rcon = new Rcon({
+						host: server.ip,
+						port: server.port,
+						password: server.rconPassword,
+					});
+					await rcon.connect();
+					await rcon.send('logstf_api_url "http://dev.api.qixalite.com/services/logstf"');
+					await rcon.disconnect();
+				}
 			} else if (status === ServerStatus.CLOSED) {
 				await this.messageService.editMessageI18n(statusMessage, MessageType.SUCCESS, "BOOKING.STOP_SUCCESS");
 			} else if (status === ServerStatus.FAILED) {
