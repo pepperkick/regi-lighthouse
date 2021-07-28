@@ -830,7 +830,9 @@ export class BookingService {
 		const connectString = `connect ${server.ip}:${server.port}; password ${server.password};`
 		const connectRconString = `${connectString} rcon_password ${server.rconPassword};`
 		const connectTvString = `connect ${server.ip}:${server.tvPort}`;
-		const hiveUrl = `https://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}`;
+		// TODO: Needs better handling
+		const hatchPort = server.port === 27015 ? 27017 : server.port + 2
+		const hiveUrl = `http://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.rconPassword)}`;
 
 		return MessageService.buildMessageEmbed(MessageType.SUCCESS)
 			.setTitle("Bookings")
@@ -838,6 +840,6 @@ export class BookingService {
 			.addField("Password", `\`${server.password}\``, true)
 			.addField("RCON Password", `\`${server.rconPassword}\``, true)
 			.addField("Region", `\`${server.region}\``, true)
-			.addField("RCON Control", `[Click here](${hiveUrl}) to access RCON`, false);
+			.addField("Server Control", `[Click here](${hiveUrl})`, false);
 	}
 }

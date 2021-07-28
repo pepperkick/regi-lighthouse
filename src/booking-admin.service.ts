@@ -13,6 +13,7 @@ import { ServerStatus } from "./objects/server-status.enum";
 import { BookingOptions } from "./objects/booking.interface";
 import { WarningMessage } from "./objects/message.exception";
 import { I18nService } from "nestjs-i18n";
+import { Server } from "./objects/server.interface";
 
 @Injectable()
 export class BookingAdminService {
@@ -222,7 +223,7 @@ export class BookingAdminService {
 	 * @param booking
 	 */
 	async getBookingStatus(booking: Booking): Promise<string> {
-		let server;
+		let server: Server;
 		let isRunning;
 
 		if (booking.server) {
@@ -266,8 +267,10 @@ export class BookingAdminService {
 		text += `\nS. Booking:  ${booking.status}`;
 
 		if (isRunning) {
+			// TODO: Needs better handling
+			const hatchPort = server.port === 27015 ? 27017 : server.port + 2
 			text += `\n\nconnect ${server.ip}:${server.port}; password ${server.password}; rcon_password ${server.rconPassword}`;
-			text += `\nhttps://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}`
+			text += `\nhttp://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.rconPassword)}`
 		}
 
 		text += "```";
