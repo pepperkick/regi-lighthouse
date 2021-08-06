@@ -1,8 +1,9 @@
 import * as moment from "moment";
+import * as config from "../config.json";
 import { Body, Controller, Logger, Post, Query } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { DiscordClient, On } from "discord-nestjs";
-import { GuildMember, Message } from "discord.js";
+import { DiscordAPIError, GuildMember, Message } from "discord.js";
 import {
 	getDateFromRelativeTime,
 	MessageFilter,
@@ -10,12 +11,10 @@ import {
 	OnDMCommand,
 	OnUserCommand,
 	parseMessageArgs,
-	parseUserArg
+	parseUserArg, parseUserString
 } from "./utils";
 import { ErrorMessage, WarningMessage } from "./objects/message.exception";
 import { MessageService } from "./message.service";
-import { ServerStatus } from "./objects/server-status.enum";
-import { Server } from "./objects/server.interface";
 import { BookingAdminService } from "./booking-admin.service";
 import { I18nService } from "nestjs-i18n";
 import { BookingOptions } from "./objects/booking.interface";
@@ -49,64 +48,83 @@ export class BookingControllerDiscord {
 			region: null,
 			bookingFor: message.member,
 			bookingBy: message.member,
-			tier: hasTier2 || hasTier3 ? "premium" : "free"
+			tier: hasTier2 || hasTier3 ? config.preferences.defaultPremiumTier : config.preferences.defaultFreeTier
 		}
 
-		// No args are given
-		// Use default region if available
-		if (args.length === 0 && this.bookingService.defaultRegion) {
+		// Parse arguments
+		for (const arg of args) {
+			// Try parsing region
+			const region = this.parseRegion(arg);
+			if (region) {
+				bookingOptions.region = region
+				continue
+			}
+
+			// Try parsing tier
+			const tier = this.parseTier(arg);
+			if (tier) {
+				bookingOptions.tier = tier;
+				continue
+			}
+
+			// Try parsing user
+			try {
+				const member = await parseUserString(this.bot, message, arg);
+				if (!member) {
+					throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.USER_IS_UNKNOWN"));
+				}
+
+				if (member.user.id === message.author.id){
+					throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.CANNOT_SELF_MULTI_BOOK"));
+				}
+
+				if (member.user.bot) {
+					throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.USER_IS_BOT"));
+				}
+
+				bookingOptions.bookingFor = member
+				continue
+			} catch (error) {
+				if (error instanceof DiscordAPIError) {
+					continue
+				} else {
+					throw error
+				}
+			}
+
+			throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.USAGE"));
+		}
+
+		// If tier is not default then check if user has tier 3
+		if (!["free", "premium"].includes(bookingOptions.tier) && (!hasTier3 || !config.features.providerSelector)) {
+			throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.PROVIDER_SELECTION.RESTRICTED"));
+		}
+
+		// If bookedBy and bookedFor is different then check if bookedBy has tier 3
+		if (bookingOptions.bookingFor !== bookingOptions.bookingBy && (!hasTier3 || !config.features.multiBooking)) {
+			throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.MULTI.RESTRICTED"));
+		}
+
+		// Use default region if available and no region was given
+		if (!bookingOptions.region && this.bookingService.defaultRegion) {
 			bookingOptions.region = this.bookingService.defaultRegion;
-			if (await this.bookingService.validateBookRequest(bookingOptions)) {
-				return this.bookingService.createBooking(bookingOptions);
-			}
-		}
-		// 1 arg is given
-		// region
-		else if (args.length === 1) {
-			const [ region ] = args;
-			const regionSlug = this.bookingService.getRegionSlug(region);
-			const regionConfig = this.bookingService.getRegionConfig(regionSlug);
-
-			if (!regionConfig) {
-				throw new WarningMessage(await this.i18n.t("REGION.UNKNOWN"));
-			}
-
-			bookingOptions.region = regionSlug;
-			if (await this.bookingService.validateBookRequest(bookingOptions)) {
-				return this.bookingService.createBooking(bookingOptions);
-			}
-		}
-		// 2 args are given
-		// user, region
-		else if (args.length === 2) {
-			if (!hasTier3)
-				throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.MULTI.RESTRICTED"));
-
-			const [ user, region ] = args;
-			const member = await parseUserArg(this.bot, message, 0);
-			const regionSlug = this.bookingService.getRegionSlug(region);
-			const regionConfig = this.bookingService.getRegionConfig(regionSlug);
-
-			if (!regionConfig) {
-				throw new WarningMessage(await this.i18n.t("REGION.UNKNOWN"));
-			}
-
-			if (member.user.id === message.author.id){
-				throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.CANNOT_SELF_MULTI_BOOK"));
-			}
-
-			if (member.user.bot) {
-				throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.USER_IS_BOT"));
-			}
-
-			bookingOptions.region = regionSlug;
-			bookingOptions.bookingFor = member;
-			if (await this.bookingService.validateBookRequest(bookingOptions)) {
-				return this.bookingService.createBooking(bookingOptions);
-			}
 		}
 
-		throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.USAGE"));
+		// Check if region is present
+		if (!bookingOptions.region) {
+			throw new WarningMessage(await this.i18n.t("REGION.UNKNOWN"));
+		}
+
+		// Check if tier is correct
+		const tierConfig = this.bookingService.getTierConfig(bookingOptions.region, bookingOptions.tier);
+		if (!tierConfig) {
+			throw new WarningMessage(await this.i18n.t("TIER.UNKNOWN"));
+		}
+
+		// Validate and create booking
+		if (await this.bookingService.validateBookRequest(bookingOptions)) {
+			return this.bookingService.createBooking(bookingOptions);
+		}
 	}
 
 	@OnUserCommand("unbook")
@@ -132,48 +150,77 @@ export class BookingControllerDiscord {
 			region: null,
 			bookingFor: message.member,
 			bookingBy: message.member,
-			tier: "premium"
+			tier: config.preferences.defaultPremiumTier
 		}
+
+		if (!config.features.reservation)
+			throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.RESTRICTED"));
 
 		if (!(hasTier2 || hasTier3))
 			throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.RESTRICTED"));
 
-		// 2 args given
-		// region, relativeTime
-		if (args.length === 2) {
-			const [ region, time ] = args;
-			const regionSlug = this.bookingService.getRegionSlug(region);
-
-			if (!regionSlug) {
-				throw new WarningMessage(await this.i18n.t("REGION.UNKNOWN"));
+		// Parse arguments
+		for (const arg of args) {
+			// Try parsing region
+			const region = this.parseRegion(arg);
+			if (region) {
+				bookingOptions.region = region;
+				continue
 			}
 
-			const date = getDateFromRelativeTime(time);
-			const seconds = moment(date).diff(moment(), "seconds");
-			const days = moment(date).diff(moment(), "days");
-
-			if (seconds < 10) {
-				throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.INVALID_TIME"));
+			// Try parsing tier
+			const tier = this.parseTier(arg);
+			if (tier) {
+				bookingOptions.tier = tier;
+				continue
 			}
 
-			if (seconds <= 1800) {
-				throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.TOO_SHORT_TIME"));
+			// Try parsing time
+			const date = getDateFromRelativeTime(arg);
+			if (date) {
+				bookingOptions.reserveAt = date.toDate();
+				continue
 			}
 
-			if (days !== 0) {
-				throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.TOO_LONG_TIME"));
-			}
-
-			bookingOptions.region = regionSlug;
-			bookingOptions.reserveAt = date.toDate();
-			if (await this.bookingService.validateBookRequest(bookingOptions)) {
-				await this.bookingService.createBooking(bookingOptions);
-			}
-
-			return;
+			throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.USAGE"));
 		}
 
-		throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.USAGE"));
+		// Use default region if available and no region was given
+		if (!bookingOptions.region && this.bookingService.defaultRegion) {
+			bookingOptions.region = this.bookingService.defaultRegion;
+		}
+
+		// Check if region is present
+		if (!bookingOptions.region) {
+			throw new WarningMessage(await this.i18n.t("REGION.UNKNOWN"));
+		}
+
+		// Check if tier is correct
+		const tierConfig = this.bookingService.getTierConfig(bookingOptions.region, bookingOptions.tier);
+		if (!tierConfig) {
+			throw new WarningMessage(await this.i18n.t("TIER.UNKNOWN"));
+		}
+
+		const date = bookingOptions.reserveAt
+		const seconds = moment(date).diff(moment(), "seconds");
+		const days = moment(date).diff(moment(), "days");
+
+		if (seconds < 10) {
+			throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.INVALID_TIME"));
+		}
+
+		if (seconds <= 1750) {
+			throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.TOO_SHORT_TIME"));
+		}
+
+		if (days !== 0) {
+			throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.TOO_LONG_TIME"));
+		}
+
+		// Validate and create booking
+		if (await this.bookingService.validateBookRequest(bookingOptions)) {
+			await this.bookingService.createBooking(bookingOptions);
+		}
 	}
 
 	@OnUserCommand("unreserve")
@@ -338,4 +385,27 @@ export class BookingControllerDiscord {
 	// 		}
 	// 	}
 	// }
+
+	parseRegion(arg: string) {
+		const region = arg.toLowerCase();
+		const regionSlug = this.bookingService.getRegionSlug(region);
+		const regionConfig = this.bookingService.getRegionConfig(regionSlug);
+		if (regionConfig) {
+			return regionSlug
+		}
+	}
+	// }
+
+	parseTier(arg: string) {
+		const tier = arg.toUpperCase();
+		if (tier.charAt(0) === "P") {
+			if (tier === "P1")
+				return "premium"
+			return tier.replace(/P/g, "premium");
+		} else if (tier.charAt(0) === "F") {
+			if (tier === "F1")
+				return "free"
+			return tier.replace(/F/g, "free");
+		}
+	}
 }

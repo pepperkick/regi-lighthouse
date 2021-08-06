@@ -148,8 +148,29 @@ export async function parseUserArg(bot: DiscordClient, message: Message, argPos 
 	if (mentionedUser)
 		return mentionedUser;
 
+	const mentionedRole = message.mentions.roles.first();
+	if (mentionedRole) {
+		return null;
+	}
+
 	const guild = await bot.guilds.fetch(message.guild.id);
 	const userId = await guild.members.fetch(args[argPos]);
+	if (userId)
+		return userId;
+}
+
+export async function parseUserString(bot: DiscordClient, message: Message, arg: string): Promise<GuildMember> {
+	const mentionedUser = message.mentions.members.first();
+	if (mentionedUser)
+		return mentionedUser;
+
+	const mentionedRole = message.mentions.roles.first();
+	if (mentionedRole) {
+		return null;
+	}
+
+	const guild = await bot.guilds.fetch(message.guild.id);
+	const userId = await guild.members.fetch(arg);
 	if (userId)
 		return userId;
 }

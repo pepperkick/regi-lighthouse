@@ -5,7 +5,7 @@
   },
 
   "TIER": {
-    "UNKNOWN": "Unknown tier."
+    "UNKNOWN": "Unknown provider. Please check the status command for the list."
   },
 
   "BOOKING": {
@@ -44,11 +44,15 @@
 
     "USER": {
       "BOOK": {
-        "USAGE": "\nUsage: \n`book <region>`\n\n- region: Region for the booking",
+        "USAGE": "\nUsage: \n`book <region> [<provider>]`\n\n- region: Region for the booking\n- provider: Select specific provider to use for the booking",
         "CANNOT_SELF_MULTI_BOOK": "You cannot use multi booking for yourself. Think about the others!",
         "USER_IS_BOT": "Giving bookings to bots may result in world domination. Your welcome! ;)",
+        "USER_IS_UNKNOWN": "Provided user is unknown, did you @ a role by mistake?",
         "MULTI": {
           "RESTRICTED": "Multiple bookings is only accessible by **Tier 3** subscribers.\nCheck-out <https://www.patreon.com/qixalite>"
+        },        
+        "PROVIDER_SELECTION": {
+          "RESTRICTED": "Selection of provider is only accessible by **Tier 3** subscribers.\nCheck-out <https://www.patreon.com/qixalite>"
         }
       },
       "RESEND": {
@@ -62,7 +66,7 @@
         "FAILED": "Failed to execute the command in your server. Please try again later."
       },
       "RESERVE": {
-        "USAGE": "\nUsage: \n`reserve <region> <time>`\n\n- region: Region for reservation\n- time: Relative time (Examples: 1h30m, 30m, 1h)",
+        "USAGE": "\nUsage: \n`reserve <region> <time> [<provider>]`\n\n- region: Region for reservation\n- time: Relative time (Examples: 1h30m, 30m, 1h)\n- provider: Select specific provider to use for the booking",
         "INVALID_TIME": "The time you mentioned is invalid.",
         "TOO_SHORT_TIME": "The time you mentioned is too short.",
         "TOO_LONG_TIME": "The time you mentioned is too long.",

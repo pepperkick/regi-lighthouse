@@ -28,6 +28,15 @@
     "premium_tier_3": "",
     "league_partner": ""
   },
+  "features": {
+    "reservation": false,
+    "multiBooking": false,
+    "providerSelector": true
+  },
+  "preferences": {
+    "defaultFreeTier": "free",
+    "defaultPremiumTier": "premium"
+  },
   "game": "",
   "regions": {
   }

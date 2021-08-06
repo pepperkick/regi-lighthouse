@@ -226,7 +226,7 @@ export class BookingService {
 		const { message, region, tier } = options
 		const tierConfig = this.getTierConfig(region, tier);
 
-		this.logger.log(`Received booking request from ${options.bookingBy.id} (${options.bookingBy.user.tag}) for ${options.bookingFor.id} (${options.bookingFor.user.tag}) at region ${region}`);
+		this.logger.log(`Received booking request from ${options.bookingBy.id} (${options.bookingBy.user.tag}) for ${options.bookingFor.id} (${options.bookingFor.user.tag}) at region ${region} (${tier})`);
 
 		if (options.reserveAt) {
 			// Create booking object
@@ -257,18 +257,21 @@ export class BookingService {
 		const statusMessage = await this.messageService.sendMessage(
 			userChannel, options.bookingFor, MessageType.INFO,
 			await this.i18n.t("BOOKING.STARTING"))
+		const provider = tierConfig.provider;
+		const serverRequest = {
+			game: config.game, region, provider,
+			closePref: {
+				minPlayers: tierConfig.minPlayers || 2,
+				idleTime: tierConfig.idleTime || 900,
+				waitTime: tierConfig.waitTime || 300
+			}
+		}
+
+		this.logger.debug(`Server request object: ${JSON.stringify(serverRequest, null, 2)}`)
 
 		try {
 			// Send request for booking
-			const provider = tierConfig.provider;
-			const server = await BookingService.sendServerCreateRequest({
-				game: config.game, region,
-				provider,
-				closePref: {
-					minPlayers: tierConfig.minPlayers || 2,
-					idleTime: tierConfig.idleTime || 900
-				}
-			});
+			const server = await BookingService.sendServerCreateRequest(serverRequest);
 
 			// Create booking object
 			const booking = new this.Booking({
@@ -288,6 +291,7 @@ export class BookingService {
 			await booking.save();
 		} catch (error) {
 			this.logger.error("Failed to send server request", error);
+			this.logger.error(`${JSON.stringify(error.response.data, null, 2)}`);
 
 			// Provider has reached the limit
 			if (error.response?.status === 429) {
@@ -448,6 +452,7 @@ export class BookingService {
 			const tiers = region.tiers;
 			const orderedTiers = Object.keys(tiers).sort();
 			const regionBookings = bookings.filter(booking => booking.region === i);
+
 			let status = ``;
 
 			status += `\`${i}\``;
@@ -461,7 +466,15 @@ export class BookingService {
 				if (tier.limit === 0) continue;
 
 				const tierBookings = regionBookings.filter(booking => booking.tier === t);
-				const name = `${t.charAt(0).toUpperCase()}`
+				let name = `${t.charAt(0).toUpperCase()}`
+
+				if (t.includes("premium")) {
+					name += `${t.split("premium")[1]}`;
+				} else if (t.includes("free")) {
+					name += `${t.split("free")[1]}`;
+				} else if (t.includes("staff")) {
+					name += `${t.split("staff")[1]}`;
+				}
 
 				status += `${name}: ${tierBookings.length} / ${tier.limit}`;
 				if (tier.allowReservation) status += " [R]";
@@ -587,7 +600,8 @@ export class BookingService {
 					provider,
 					closePref: {
 						minPlayers: tierConfig.minPlayers || 2,
-						idleTime: tierConfig.idleTime || 900
+						idleTime: tierConfig.idleTime || 900,
+						waitTime: tierConfig.waitTime || 300
 					}
 				});
 
@@ -754,7 +768,8 @@ export class BookingService {
 	 * @param member
 	 */
 	isUserTier1(member: GuildMember) {
-		return !!member.roles.cache.get(config.roles.premium_tier_1);
+		return config.roles.premium_tier_1 === "<bypass>" ? true : !!member.roles.cache.get(config.roles.premium_tier_1);
+
 	}
 
 	/**
@@ -763,7 +778,7 @@ export class BookingService {
 	 * @param member
 	 */
 	isUserTier2(member: GuildMember) {
-		return !!member.roles.cache.get(config.roles.premium_tier_2);
+		return config.roles.premium_tier_2 === "<bypass>" ? true : !!member.roles.cache.get(config.roles.premium_tier_2);
 	}
 
 	/**
@@ -772,7 +787,7 @@ export class BookingService {
 	 * @param member
 	 */
 	isUserTier3(member: GuildMember) {
-		return !!member.roles.cache.get(config.roles.premium_tier_3);
+		return config.roles.premium_tier_3 === "<bypass>" ? true : !!member.roles.cache.get(config.roles.premium_tier_3);
 	}
 
 	/**

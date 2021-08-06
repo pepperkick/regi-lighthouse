@@ -21,6 +21,7 @@ export interface RegionTier {
 	provider: string
 	minPlayers?: number
 	idleTime?: number
+	waitTime?: number
 	allowReservation?: boolean
 	earlyStart?: number
 }

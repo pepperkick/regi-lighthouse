@@ -18,5 +18,6 @@ export interface RequestOptions {
 	closePref?: {
 		minPlayers: number
 		idleTime: number
+		waitTime: number
 	}
 }
