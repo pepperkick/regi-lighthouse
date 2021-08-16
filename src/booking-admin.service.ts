@@ -270,7 +270,7 @@ export class BookingAdminService {
 			// TODO: Needs better handling
 			const hatchPort = server.port === 27015 ? 27017 : server.port + 2
 			text += `\n\nconnect ${server.ip}:${server.port}; password ${server.password}; rcon_password ${server.rconPassword}`;
-			text += `\nhttp://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.rconPassword)}`
+			text += `\nhttps://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.rconPassword)}`
 		}
 
 		text += "```";

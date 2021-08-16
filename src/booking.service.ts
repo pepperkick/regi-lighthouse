@@ -6,7 +6,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { GuildMember, Message, TextChannel, User } from "discord.js";
 import { I18nService } from "nestjs-i18n";
 import { WarningMessage } from "./objects/message.exception";
-import { CastError, Model } from "mongoose";
+import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { Booking } from "./booking.model";
 import { BOOKING_ACTIVE_STATUS_CONDITION, BookingStatus } from "./objects/booking-status.enum";
@@ -847,7 +847,7 @@ export class BookingService {
 		const connectTvString = `connect ${server.ip}:${server.tvPort}`;
 		// TODO: Needs better handling
 		const hatchPort = server.port === 27015 ? 27017 : server.port + 2
-		const hiveUrl = `http://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.rconPassword)}`;
+		const hiveUrl = `https://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.rconPassword)}`;
 
 		return MessageService.buildMessageEmbed(MessageType.SUCCESS)
 			.setTitle("Bookings")
