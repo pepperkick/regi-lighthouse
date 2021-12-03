@@ -117,8 +117,8 @@ export class BookingService {
 	/**
 	 * Send a server creation request to lighthouse
 	 */
-	static async sendServerCreateRequest(options: RequestOptions): Promise<any> {
-		options.callbackUrl = `${config.localhost}/booking/callback`;
+	static async sendServerCreateRequest(options: Server): Promise<any> {
+		options.data.callbackUrl = `${config.localhost}/booking/callback`;
 		const res = await axios.post(`${config.lighthouse.host}/api/v1/servers`, options, {
 			headers: {
 				"Authorization": `Bearer ${config.lighthouse.clientSecret}`
@@ -143,7 +143,9 @@ export class BookingService {
 	 * Send rcon command to server
 	 */
 	static async sendRconCommandRequest(booking: Booking, command: string): Promise<string> {
-		const { ip, port, rconPassword } = await BookingService.getServerInfo(booking.server);
+		const server = await BookingService.getServerInfo(booking.server);
+		const { ip, port } = server;
+		const { rconPassword } = server.data
 		const rcon = new Rcon({
 			host: ip,
 			port: port,
@@ -258,12 +260,13 @@ export class BookingService {
 			userChannel, options.bookingFor, MessageType.INFO,
 			await this.i18n.t("BOOKING.STARTING"))
 		const provider = tierConfig.provider;
-		const serverRequest = {
+		const serverRequest: Server = {
 			game: config.game, region, provider,
-			closePref: {
-				minPlayers: tierConfig.minPlayers || 2,
-				idleTime: tierConfig.idleTime || 900,
-				waitTime: tierConfig.waitTime || 300
+			data: {
+				sdrEnable: tierConfig.sdrEnable || false,
+				closeMinPlayers: tierConfig.minPlayers || 2,
+				closeIdleTime: tierConfig.idleTime || 900,
+				closeWaitTime: tierConfig.waitTime || 300
 			}
 		}
 
@@ -291,7 +294,7 @@ export class BookingService {
 			await booking.save();
 		} catch (error) {
 			this.logger.error("Failed to send server request", error);
-			this.logger.error(`${JSON.stringify(error.response.data, null, 2)}`);
+			this.logger.error(`${JSON.stringify(error.response?.data, null, 2)}`);
 
 			// Provider has reached the limit
 			if (error.response?.status === 429) {
@@ -546,7 +549,7 @@ export class BookingService {
 					const rcon = new Rcon({
 						host: server.ip,
 						port: server.port,
-						password: server.rconPassword,
+						password: server.data.rconPassword,
 					});
 					await rcon.connect();
 					await rcon.send('logstf_api_url "http://dev.api.qixalite.com/services/logstf"');
@@ -598,10 +601,11 @@ export class BookingService {
 					game: config.game,
 					region: booking.region,
 					provider,
-					closePref: {
-						minPlayers: tierConfig.minPlayers || 2,
-						idleTime: tierConfig.idleTime || 900,
-						waitTime: tierConfig.waitTime || 300
+					data: {
+						sdrEnable: tierConfig.sdrEnable || false,
+						closeMinPlayers: tierConfig.minPlayers || 2,
+						closeIdleTime: tierConfig.idleTime || 900,
+						closeWaitTime: tierConfig.waitTime || 300
 					}
 				});
 
@@ -842,18 +846,18 @@ export class BookingService {
 	 * @param server
 	 */
 	private static buildConnectMessage(server: Server) {
-		const connectString = `connect ${server.ip}:${server.port}; password ${server.password};`
-		const connectRconString = `${connectString} rcon_password ${server.rconPassword};`
-		const connectTvString = `connect ${server.ip}:${server.tvPort}`;
+		const connectString = `connect ${server.ip}:${server.port}; password ${server.data.password};`
+		const connectRconString = `${connectString} rcon_password ${server.data.rconPassword};`
+		const connectTvString = `connect ${server.ip}:${server.data.tvPort}`;
 		// TODO: Needs better handling
 		const hatchPort = server.port === 27015 ? 27017 : server.port + 2
-		const hiveUrl = `https://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.rconPassword)}`;
+		const hiveUrl = `https://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.data.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.data.rconPassword)}`;
 
 		return MessageService.buildMessageEmbed(MessageType.SUCCESS)
 			.setTitle("Bookings")
 			.setDescription(`Your server is ready\n**Connect String with RCON**\`\`\`${connectRconString}\`\`\`\n**Connect String**\`\`\`${connectString}\`\`\`\n**SourceTV Details**\`\`\`${connectTvString}\`\`\``)
-			.addField("Password", `\`${server.password}\``, true)
-			.addField("RCON Password", `\`${server.rconPassword}\``, true)
+			.addField("Password", `\`${server.data.password}\``, true)
+			.addField("RCON Password", `\`${server.data.rconPassword}\``, true)
 			.addField("Region", `\`${server.region}\``, true)
 			.addField("Server Control", `[Click here](${hiveUrl})`, false);
 	}

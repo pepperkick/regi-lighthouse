@@ -255,9 +255,9 @@ export class BookingAdminService {
 		text += `\nRegion:      ${booking.region}`;
 
 		if (isRunning) {
-			text += `\nIP:          ${server.ip}:${server.port} (${server.tvPort})`;
-			text += `\nPassword:    ${server.password}`;
-			text += `\nRCON:        ${server.rconPassword}`;
+			text += `\nIP:          ${server.ip}:${server.port} (${server.data.tvPort})`;
+			text += `\nPassword:    ${server.data.password}`;
+			text += `\nRCON:        ${server.data.rconPassword}`;
 		}
 
 		if (server) {
@@ -269,8 +269,8 @@ export class BookingAdminService {
 		if (isRunning) {
 			// TODO: Needs better handling
 			const hatchPort = server.port === 27015 ? 27017 : server.port + 2
-			text += `\n\nconnect ${server.ip}:${server.port}; password ${server.password}; rcon_password ${server.rconPassword}`;
-			text += `\nhttps://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.rconPassword)}`
+			text += `\n\nconnect ${server.ip}:${server.port}; password ${server.data.password}; rcon_password ${server.data.rconPassword}`;
+			text += `\nhttps://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.data.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.data.rconPassword)}`
 		}
 
 		text += "```";

@@ -19,6 +19,7 @@ export interface RegionTier {
 	limit: number
 	inUse?: number
 	provider: string
+	sdrEnable: boolean
 	minPlayers?: number
 	idleTime?: number
 	waitTime?: number
