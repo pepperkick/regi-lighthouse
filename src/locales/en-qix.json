@@ -5,7 +5,7 @@
   },
 
   "TIER": {
-    "UNKNOWN": "Unknown tier."
+    "UNKNOWN": "Unknown provider. Please check the status command for the list."
   },
 
   "BOOKING": {
@@ -18,7 +18,7 @@
     "SERVER_FAILED": "Your server request has failed. Please report this issue to support.",
     "ALREADY_EXISTS": "You have already booked a server\nUse `unbook` command to remove your booking.\nIf you recently used 'unbook' then please wait until the previous server has been closed.",
     "RESERVATION_ALREADY_EXISTS": "You already have a reservation.\nUse `unreserve` to remove your existing reservation.",
-    "REACHED_LIMIT": "The maximum amount of free bookable servers for your location has been reached. Please try again later.",
+    "REACHED_LIMIT": "The maximum amount of free bookable servers for your location has been reached. Please try again later or you can check-out <https://www.patreon.com/qixalite> to gain access to our exclusive server pool.",
     "PROVIDER_OVERLOADED": "Unable to create a server, please try again later.",
     "ONGOING": "You cannot close the booking while it is starting. Please wait until the server has started.",
     "NO_DETAILS_DURING_STARTING": "Cannot send server details while the server is starting. Please wait until the server has started.",
@@ -49,10 +49,10 @@
         "USER_IS_BOT": "Giving bookings to bots may result in world domination. Your welcome! ;)",
         "USER_IS_UNKNOWN": "Provided user is unknown, did you @ a role by mistake?",
         "MULTI": {
-          "RESTRICTED": "Multiple bookings is not available."
-        },
+          "RESTRICTED": "Multiple bookings is only accessible by **Tier 3** subscribers.\nCheck-out <https://www.patreon.com/qixalite>"
+        },        
         "PROVIDER_SELECTION": {
-          "RESTRICTED": "Provider selection is not available."
+          "RESTRICTED": "Selection of provider is only accessible by **Tier 3** subscribers.\nCheck-out <https://www.patreon.com/qixalite>"
         }
       },
       "RESEND": {
@@ -70,7 +70,7 @@
         "INVALID_TIME": "The time you mentioned is invalid.",
         "TOO_SHORT_TIME": "The time you mentioned is too short.",
         "TOO_LONG_TIME": "The time you mentioned is too long.",
-        "RESTRICTED": "Booking reservation is not available."
+        "RESTRICTED": "Booking reservation is accessible by **Tier 2+** subscribers.\nCheck-out <https://www.patreon.com/qixalite>"
       },
       "UNRESERVE": {
         "USER_HAS_NO_RESERVATION": "You have no reservation.",
