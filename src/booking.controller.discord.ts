@@ -238,7 +238,7 @@ export class BookingControllerDiscord {
 		if (args.length === 0)
 			await this.bookingService.sendBookingStatus(message);
 		else if (args.length === 1)
-			await this.bookingService.sendBookingStatus(message, args[0]);
+			await this.bookingService.sendBookingStatus(message, { tag: args[0] });
 	}
 
 	@OnAdminCommand("book")

@@ -16,6 +16,7 @@ import { DiscordService } from "./discord.service";
 import { SettingsCommand } from "./commands/settings.command";
 import { Preference, PreferenceSchema } from "./preference.model";
 import { PreferenceService } from "./preference.service";
+import { BookingCommand } from "./commands/booking.command";
 
 @Module({
 	imports: [
@@ -45,7 +46,8 @@ import { PreferenceService } from "./preference.service";
 		MessageService,
 		PreferenceService,
 		DiscordService,
-		SettingsCommand
+		SettingsCommand,
+		BookingCommand
 	],
 	exports: [ DiscordService ]
 })

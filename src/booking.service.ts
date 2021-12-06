@@ -3,7 +3,7 @@ import * as moment from "moment";
 import axios from "axios";
 import Rcon from 'rcon-ts';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { GuildMember, Message, TextChannel, User } from "discord.js";
+import { CommandInteraction, GuildMember, Message, TextChannel, User } from "discord.js";
 import { I18nService } from "nestjs-i18n";
 import { WarningMessage } from "./objects/message.exception";
 import { Model } from "mongoose";
@@ -429,24 +429,50 @@ export class BookingService {
 		}
 	}
 
+	getAllRegionTags() {
+		const regions = config.regions;
+		const keys = Object.keys(regions);
+		const allTags = [];
+
+		for (const i of keys) {
+			const region: Region = regions[i];
+			const tags = region.tags;
+
+			tags.forEach(tag => allTags.includes(tag) || allTags.push(tag))
+		}
+
+		return allTags;
+	}
+
 	/**
 	 * Send booking details
 	 *
 	 * @param message
 	 * @param filter
 	 */
-	async sendBookingStatus(message: Message, filter: string = undefined) {
+	async sendBookingStatus(message: Message | CommandInteraction, filter: {
+		continent?: string,
+		tag?: string
+	} = {}) {
+		let userId
+
+		if (message instanceof Message) {
+			userId = message.author.id;
+		} else if (message instanceof CommandInteraction) {
+			userId = message.user.id;
+		}
+
 		const embed = MessageService.buildTextMessage(MessageType.INFO, "", "Status");
 		const regions = config.regions;
 
 		// Get user's booking if they have it
-		const userBookings = await this.getActiveUserBookings(message.author.id);
+		const userBookings = await this.getActiveUserBookings(userId);
 		if (userBookings.length !== 0) {
 			embed.setDescription(`You currently have an active booking at ${regions[userBookings[0].region].name}`);
 		}
 
 		// Get user's reservation if they have it
-		const userReservations = await this.getUserReservations(message.author.id);
+		const userReservations = await this.getUserReservations(userId);
 		if (userReservations.length !== 0) {
 			const text = getDateFormattedRelativeTime(userReservations[0].reservedAt);
 			embed.setDescription(`You currently have a scheduled reservation at ${regions[userReservations[0].region].name} in ${text || "1 min"}`);
@@ -460,25 +486,44 @@ export class BookingService {
 		if (bookings.length !== 0)
 			embed.addField("Active", bookings.length.toString())
 
-		const keys = Object.keys(regions);
-		let filteredRegions = [];
+		let filteredRegions = Object.keys(regions);
 
-		if (filter) {
+		if (filter.continent) {
+			const keys = filteredRegions
+			filteredRegions = []
+
+			for (const i of keys) {
+				const region: Region = regions[i];
+				const continent = region.continent;
+
+				if (continent === filter.continent) {
+					filteredRegions.push(i);
+				}
+			}
+		}
+
+		if (filter.tag) {
+			const keys = filteredRegions
+			filteredRegions = []
+
 			for (const i of keys) {
 				const region: Region = regions[i];
 				const tags = region.tags;
 
-				if (tags?.includes(filter.toLowerCase())) {
+				if (tags?.includes(filter.tag.toLowerCase())) {
 					filteredRegions.push(i);
 				}
 			}
-		} else {
-			filteredRegions = keys
 		}
 
 		if (filteredRegions.length === 0) {
 			embed.addField("No region found", "Could not find any region with that tag. Please try something else.", true);
-			return await message.reply({ embeds: [embed] });
+
+			if (message instanceof Message) {
+				return await message.reply({ embeds: [embed] });
+			} else if (message instanceof CommandInteraction) {
+				return await message.reply({ embeds: [embed], ephemeral: true });
+			}
 		}
 
 		const orderedRegions = filteredRegions.sort();
@@ -521,7 +566,11 @@ export class BookingService {
 			embed.addField(region.name, status, true);
 		}
 
-		await message.reply({ embeds: [embed] });
+		if (message instanceof Message) {
+			await message.reply({ embeds: [embed] });
+		} else if (message instanceof CommandInteraction) {
+			await message.reply({ embeds: [embed], ephemeral: true });
+		}
 	}
 
 	/**
