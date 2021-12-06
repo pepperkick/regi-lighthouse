@@ -25,11 +25,11 @@ export class PreferenceService {
 			});
 		}
 
-		console.log(preference)
-
 		preference.data[key] = value;
 		preference.markModified('data');
 		await preference.save();
+
+		console.log(preference)
 	}
 
 	async getData(id: string, key: string) {

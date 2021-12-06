@@ -246,18 +246,25 @@ export class BookingAdminService {
 		}
 
 		text += `\nDiscord ID:  ${booking.bookingFor} (${user.tag})`;
+		text += `\nTime Now:    ${new Date().toUTCString()}`;
 		text += `\nCreated At:  ${booking.createdAt.toUTCString()}`;
 
 		if (booking.reservedAt) {
 			text += `\nReserved At: ${booking.reservedAt.toUTCString()}`;
 		}
 
+		if (server.closeAt) {
+			text += `\nClose At:    ${moment(server.closeAt).toDate().toUTCString()}`;
+		}
+
 		text += `\nRegion:      ${booking.region}`;
+		text += `\nProvider:    ${server.provider}`;
 
 		if (isRunning) {
 			text += `\nIP:          ${server.ip}:${server.port} (${server.data.tvPort})`;
 			text += `\nPassword:    ${server.data.password}`;
-			text += `\nRCON:        ${server.data.rconPassword}`;
+			text += `\nP. RCON:     ${server.data.rconPassword}`;
+			text += `\nP. TV:       ${server.data.tvPassword}`;
 		}
 
 		if (server) {
@@ -269,8 +276,11 @@ export class BookingAdminService {
 		if (isRunning) {
 			// TODO: Needs better handling
 			const hatchPort = server.port === 27015 ? 27017 : server.port + 2
-			text += `\n\nconnect ${server.ip}:${server.port}; password ${server.data.password}; rcon_password ${server.data.rconPassword}`;
-			text += `\nhttps://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.data.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.data.rconPassword)}`
+			if (server.data.sdrEnable) {
+				text += `\n\nconnect ${server.data.sdrIp}:${server.data.sdrPort}; password "${server.data.password}"; rcon_address ${server.ip}:${server.port}; rcon_password "${server.data.rconPassword}";`
+			}
+			text += `\n\nconnect ${server.ip}:${server.port}; password "${server.data.password}"; rcon_password "${server.data.rconPassword}";`;
+			text += `\n\nhttps://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.data.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.data.rconPassword)}`
 		}
 
 		text += "```";

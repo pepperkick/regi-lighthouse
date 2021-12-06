@@ -1,5 +1,5 @@
 export enum Game {
-	TF2_COMP = 'tf2-comp',
+	TF2 = 'tf2',
 	VALHEIM = 'valheim',
 	MINECRAFT = 'minecraft',
 }

@@ -60,4 +60,17 @@ export class SettingsCommand {
 			ephemeral: true,
 		})
 	}
+
+	@Slash("valve-sdr", { description: "Enable / Disable TF2 Valve SDR connection mode (This is an experimental feature)."})
+	async enableSdr(
+		@SlashOption("enable", { description: "Enable or disable the feature", required: true })
+		enable: boolean,
+		interaction: CommandInteraction
+	) {
+		await SettingsCommand.service.storeData(interaction.user.id, "tf2_sdr_mode", enable);
+		await interaction.reply({
+			content: `Your settings has been saved!`,
+			ephemeral: true,
+		})
+	}
 }

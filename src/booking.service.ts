@@ -20,7 +20,6 @@ import { Regions, Region, RegionTier } from "./objects/region.interface";
 import { getDateFormattedRelativeTime } from "./utils";
 import { Game } from "./objects/game.enum";
 import { PreferenceService } from "./preference.service";
-import { options } from "tsconfig-paths/lib/options";
 
 @Injectable()
 export class BookingService {
@@ -324,7 +323,6 @@ export class BookingService {
 
 		server.data = {
 			...server.data,
-			sdrEnable: tierConfig.sdrEnable || false,
 			closeMinPlayers: tierConfig.minPlayers || 2,
 			closeIdleTime: tierConfig.idleTime || 900,
 			closeWaitTime: tierConfig.waitTime || 300
@@ -335,6 +333,9 @@ export class BookingService {
 
 		data = await this.preference.getData(user, "tf2_rcon_password");
 		server.data.rconPassword = data === "" ? "" : !data ? "*" : data;
+
+		data = await this.preference.getData(user, "tf2_sdr_mode");
+		server.data.sdrEnable = data;
 
 		return server
 	}
@@ -578,7 +579,7 @@ export class BookingService {
 
 				// Workaround: Set logstf API key to kaiend for binarylane to fix logs not uploading issue.
 				// Send a RCON command if game is tf2-comp and server provider contains "binarylane"
-				if (server.game === Game.TF2_COMP && server.provider.includes("binarylane")) {
+				if (server.game === Game.TF2 && server.provider.includes("binarylane")) {
 					const rcon = new Rcon({
 						host: server.ip,
 						port: server.port,
@@ -912,17 +913,30 @@ export class BookingService {
 	 * @param server
 	 */
 	private static buildConnectMessage(server: Server) {
-		let connectString = `connect ${server.ip}:${server.port};`
+		let connectString = "";
+		if (server.data.sdrEnable) {
+			connectString += `connect ${server.data.sdrIp}:${server.data.sdrPort};`
+		} else {
+			connectString += `connect ${server.ip}:${server.port};`
+		}
 		if (server.data.password) {
 			connectString += ` password "${server.data.password}";`
 		}
 
 		let connectRconString = `${connectString}`
+		if (server.data.sdrEnable) {
+			connectRconString += ` rcon_address ${server.ip}:${server.port};`
+		}
 		if (server.data.rconPassword) {
 			connectRconString += ` rcon_password "${server.data.rconPassword}";`
 		}
 
-		let connectTvString = `connect ${server.ip}:${server.data.tvPort};`;
+		let connectTvString = ``;
+		if (server.data.sdrEnable) {
+			connectTvString += `connect ${server.data.sdrIp}:${server.data.sdrTvPort};`
+		} else {
+			connectTvString += `connect ${server.ip}:${server.data.tvPort};`
+		}
 		if (server.data.tvPassword) {
 			connectTvString += ` rcon_password "${server.data.tvPassword}";`
 		}
@@ -930,10 +944,16 @@ export class BookingService {
 		const hatchPort = server.port === 27015 ? 27017 : server.port + 2
 		const hiveUrl = `https://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.data.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.data.rconPassword)}`;
 
-		return MessageService.buildMessageEmbed(MessageType.SUCCESS)
+		const message = MessageService.buildMessageEmbed(MessageType.SUCCESS)
 			.setTitle("Bookings")
 			.setDescription(`Your server is ready\n**Connect String with RCON**\`\`\`${connectRconString}\`\`\`\n**Connect String**\`\`\`${connectString}\`\`\`\n**SourceTV Details**\`\`\`${connectTvString}\`\`\``)
 			.addField("Region", `\`${server.region}\``, true)
 			.addField("Server Control", `[Click here](${hiveUrl})`, false);
+
+		if (server.data.sdrEnable) {
+			message.addField("Original IP", `Do not share this unless you have connection issues\n\`${server.ip}:${server.port}\``)
+		}
+
+		return message;
 	}
 }
