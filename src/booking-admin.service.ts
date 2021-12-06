@@ -65,7 +65,7 @@ export class BookingAdminService {
 		const bookings = await this.bookingService.getActiveBookings();
 
 		if (bookings.length !== 0) {
-			embed.addField("Active", bookings.length)
+			embed.addField("Active", bookings.length.toString())
 
 			let desc = "```";
 
@@ -81,7 +81,7 @@ export class BookingAdminService {
 			embed.setDescription(await this.i18n.t("COMMAND.ADMIN.STATUS.NO_ACTIVE_BOOKINGS"));
 		}
 
-		await message.reply("", embed);
+		await message.reply({ embeds: [embed] });
 	}
 
 	/**
@@ -101,11 +101,11 @@ export class BookingAdminService {
 			embed.setDescription(await this.i18n.t("COMMAND.ADMIN.STATUS.USER_NO_BOOKINGS", {
 				args: { user: user.tag }
 			}));
-			await message.reply("", embed);
+			await message.reply({ embeds: [embed] });
 			return;
 		}
 
-		embed.addField("Total Bookings", bookings.length);
+		embed.addField("Total Bookings", bookings.length.toString());
 
 		// Get all active bookings by user
 		const activeBookings = await this.bookingService.getActiveUserBookings(user.id)
@@ -142,7 +142,7 @@ export class BookingAdminService {
 			embed.setDescription(desc);
 		}
 
-		await message.reply("", embed);
+		await message.reply({ embeds: [embed] });
 	}
 
 	/**
@@ -156,7 +156,7 @@ export class BookingAdminService {
 
 		embed.setDescription(await this.getBookingStatus(booking));
 
-		await message.reply("", embed);
+		await message.reply({ embeds: [embed] });
 	}
 
 	/**
@@ -177,11 +177,11 @@ export class BookingAdminService {
 			embed.setDescription(await this.i18n.t("COMMAND.ADMIN.STATUS.REGION_NO_BOOKINGS", {
 				args: { region: name }
 			}));
-			await message.reply("", embed);
+			await message.reply({ embeds: [embed] });
 			return;
 		}
 
-		embed.addField("Total Bookings", bookings.length);
+		embed.addField("Total Bookings", bookings.length.toString());
 
 		// Get all active bookings in the region
 		const activeBookings = await this.bookingService.getActiveRegionBookings(region);
@@ -214,7 +214,7 @@ export class BookingAdminService {
 			embed.setDescription(desc);
 		}
 
-		await message.reply("", embed);
+		await message.reply({ embeds: [embed] });
 	}
 
 	/**

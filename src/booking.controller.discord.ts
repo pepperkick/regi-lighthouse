@@ -123,7 +123,7 @@ export class BookingControllerDiscord {
 
 		// Validate and create booking
 		if (await this.bookingService.validateBookRequest(bookingOptions)) {
-			return this.bookingService.createBooking(bookingOptions);
+			return this.bookingService.createBookingRequest(bookingOptions);
 		}
 	}
 
@@ -219,7 +219,7 @@ export class BookingControllerDiscord {
 
 		// Validate and create booking
 		if (await this.bookingService.validateBookRequest(bookingOptions)) {
-			await this.bookingService.createBooking(bookingOptions);
+			await this.bookingService.createBookingRequest(bookingOptions);
 		}
 	}
 
@@ -285,7 +285,7 @@ export class BookingControllerDiscord {
 						message, MessageType.SUCCESS, await this.i18n.t("BOOKING.ADMIN.STARTING", {
 							args: { user: member.user.tag }
 						}));
-					return await this.bookingService.createBooking(bookingOptions);
+					return await this.bookingService.createBookingRequest(bookingOptions);
 				}
 			}
 		}

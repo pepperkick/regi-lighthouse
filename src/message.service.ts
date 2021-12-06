@@ -51,7 +51,10 @@ export class MessageService {
      * @param text
      */
     async editMessage(message: Message, type: MessageType, text: string): Promise<Message> {
-        return message.edit(message.content, MessageService.buildTextMessage(type, text));
+        return message.edit({
+            content: message.content,
+            embeds: [ MessageService.buildTextMessage(type, text) ]
+        });
     }
 
     /**
@@ -77,9 +80,14 @@ export class MessageService {
      */
     async sendMessage(target: Message | TextChannel, user: User | GuildMember, type: MessageType, text: string): Promise<Message> {
         if (target instanceof Message)
-            return target.reply("", MessageService.buildTextMessage(type, text));
+            return target.reply({
+                embeds: [MessageService.buildTextMessage(type, text)]
+            });
         else if (target instanceof TextChannel)
-            return target.send(user, MessageService.buildTextMessage(type, text));
+            return target.send({
+                content: user.toString(),
+                embeds: [MessageService.buildTextMessage(type, text)]
+            });
     }
 
     /**

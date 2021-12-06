@@ -11,16 +11,23 @@ import * as path from 'path';
 import { BookingAdminService } from "./booking-admin.service";
 import { BookingControllerRest } from "./booking.controller.rest";
 import { BookingControllerTcp } from "./booking.controller.tcp";
+import { Intents } from "discord.js";
+import { DiscordService } from "./discord.service";
+import { SettingsCommand } from "./commands/settings.command";
+import { Preference, PreferenceSchema } from "./preference.model";
+import { PreferenceService } from "./preference.service";
 
 @Module({
 	imports: [
 		MongooseModule.forFeature([
-			{ name: Booking.name, schema: BookingSchema }
+			{ name: Booking.name, schema: BookingSchema },
+			{ name: Preference.name, schema: PreferenceSchema }
 		]),
 		MongooseModule.forRoot(config.mongodbUri),
 		DiscordModule.forRoot({
 			token: config.token,
-			commandPrefix: config.prefix
+			commandPrefix: config.prefix,
+			intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ]
 		}),
 		I18nModule.forRoot({
 			fallbackLanguage: config.language,
@@ -32,7 +39,15 @@ import { BookingControllerTcp } from "./booking.controller.tcp";
 		}),
 	],
 	controllers: [ BookingControllerDiscord, BookingControllerRest, BookingControllerTcp ],
-	providers: [ BookingService, BookingAdminService, MessageService ],
+	providers: [
+		BookingService,
+		BookingAdminService,
+		MessageService,
+		PreferenceService,
+		DiscordService,
+		SettingsCommand
+	],
+	exports: [ DiscordService ]
 })
 export class AppModule {
 }

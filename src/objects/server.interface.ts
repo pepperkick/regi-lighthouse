@@ -13,11 +13,24 @@ export interface Server {
 	image?: string
 	status?: ServerStatus
 	data: {
-		// For TF2
+		// For TF2, Valheim
 		password?: string
+
+		// For TF2
+		servername?: string
 		rconPassword?: string
 		sdrEnable?: boolean
+		tvEnable?: boolean
+		tvPassword?: string
 		tvPort?: number
+		tvName?: string
+		map?: string
+
+		// For Minecraft
+		rconPort?: number
+
+		// For Valheim
+		world?: string
 
 		// For Status Updates
 		callbackUrl?: string
@@ -26,5 +39,16 @@ export interface Server {
 		closeMinPlayers?: number
 		closeIdleTime?: number
 		closeWaitTime?: number
+
+		// For Git Repository
+		gitRepository?: string
+		gitDeployKey?: string
+
+		// For Hatch
+		hatchAddress?: string
+		hatchPassword?: string
+		hatchElasticURL?: string
+		hatchElasticChatIndex?: string
+		hatchElasticLogsIndex?: string
 	}
 }

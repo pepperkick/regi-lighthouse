@@ -15,10 +15,12 @@ import { DiscordClient } from "discord-nestjs";
 import { MessageType } from "./objects/message-types.enum";
 import { ServerStatus } from "./objects/server-status.enum";
 import { Server } from "./objects/server.interface";
-import { BookingOptions, RequestOptions } from "./objects/booking.interface";
+import { BookingOptions } from "./objects/booking.interface";
 import { Regions, Region, RegionTier } from "./objects/region.interface";
 import { getDateFormattedRelativeTime } from "./utils";
 import { Game } from "./objects/game.enum";
+import { PreferenceService } from "./preference.service";
+import { options } from "tsconfig-paths/lib/options";
 
 @Injectable()
 export class BookingService {
@@ -31,7 +33,8 @@ export class BookingService {
 		private readonly Booking: Model<Booking>,
 		private readonly messageService: MessageService,
 		private readonly bot: DiscordClient,
-		private readonly i18n: I18nService
+		private readonly i18n: I18nService,
+		private readonly preference: PreferenceService
 	) {
 		const regions = config.regions;
 		for (const index in regions) {
@@ -224,7 +227,7 @@ export class BookingService {
 	 *
 	 * @param options
 	 * */
-	async createBooking(options: BookingOptions) {
+	async createBookingRequest(options: BookingOptions) {
 		const { message, region, tier } = options
 		const tierConfig = this.getTierConfig(region, tier);
 
@@ -259,20 +262,28 @@ export class BookingService {
 		const statusMessage = await this.messageService.sendMessage(
 			userChannel, options.bookingFor, MessageType.INFO,
 			await this.i18n.t("BOOKING.STARTING"))
-		const provider = tierConfig.provider;
-		const serverRequest: Server = {
-			game: config.game, region, provider,
-			data: {
-				sdrEnable: tierConfig.sdrEnable || false,
-				closeMinPlayers: tierConfig.minPlayers || 2,
-				closeIdleTime: tierConfig.idleTime || 900,
-				closeWaitTime: tierConfig.waitTime || 300
+
+
+		if (typeof tierConfig.provider === "string") {
+			await this.createBooking(options, statusMessage, tierConfig.provider)
+		} else if (Array.isArray(tierConfig.provider)) {
+			for (const [i, provider] of tierConfig.provider.entries()) {
+				if (await this.createBooking(
+					options, statusMessage, provider,
+					i === tierConfig.provider.length - 1
+				))
+					break;
 			}
 		}
+	}
 
-		this.logger.debug(`Server request object: ${JSON.stringify(serverRequest, null, 2)}`)
+	async createBooking(options: BookingOptions, statusMessage: Message, provider: string, failOnProviderOverload: boolean = true) {
+		const { message, region, tier } = options
 
 		try {
+			const serverRequest = await this.getDefaultServerRequest(options.bookingFor.id, region, tier, provider);
+			this.logger.debug(`Server request object: ${JSON.stringify(serverRequest, null, 2)}`)
+
 			// Send request for booking
 			const server = await BookingService.sendServerCreateRequest(serverRequest);
 
@@ -292,18 +303,40 @@ export class BookingService {
 				}
 			};
 			await booking.save();
+			return true;
 		} catch (error) {
 			this.logger.error("Failed to send server request", error);
 			this.logger.error(`${JSON.stringify(error.response?.data, null, 2)}`);
 
 			// Provider has reached the limit
 			if (error.response?.status === 429) {
-				await this.messageService.editMessageI18n(statusMessage, MessageType.ERROR, "BOOKING.PROVIDER_OVERLOADED");
-				return;
+				failOnProviderOverload && await this.messageService.editMessageI18n(statusMessage, MessageType.ERROR, "BOOKING.PROVIDER_OVERLOADED");
+				return false;
 			}
 
 			await this.messageService.editMessageI18n(statusMessage, MessageType.ERROR, "BOOKING.START_FAILED");
+			return true;
 		}
+	}
+
+	async updateServerRequest(server: Server, user: string, tierConfig: RegionTier) {
+		let data;
+
+		server.data = {
+			...server.data,
+			sdrEnable: tierConfig.sdrEnable || false,
+			closeMinPlayers: tierConfig.minPlayers || 2,
+			closeIdleTime: tierConfig.idleTime || 900,
+			closeWaitTime: tierConfig.waitTime || 300
+		}
+
+		data = await this.preference.getData(user, "tf2_password");
+		server.data.password = data === "" ? "" : !data ? "*" : data;
+
+		data = await this.preference.getData(user, "tf2_rcon_password");
+		server.data.rconPassword = data === "" ? "" : !data ? "*" : data;
+
+		return server
 	}
 
 	/**
@@ -424,7 +457,7 @@ export class BookingService {
 		const bookings = await this.getActiveBookings()
 
 		if (bookings.length !== 0)
-			embed.addField("Active", bookings.length)
+			embed.addField("Active", bookings.length.toString())
 
 		const keys = Object.keys(regions);
 		let filteredRegions = [];
@@ -444,7 +477,7 @@ export class BookingService {
 
 		if (filteredRegions.length === 0) {
 			embed.addField("No region found", "Could not find any region with that tag. Please try something else.", true);
-			return await message.reply("", embed);
+			return await message.reply({ embeds: [embed] });
 		}
 
 		const orderedRegions = filteredRegions.sort();
@@ -487,7 +520,7 @@ export class BookingService {
 			embed.addField(region.name, status, true);
 		}
 
-		await message.reply("", embed);
+		await message.reply({ embeds: [embed] });
 	}
 
 	/**
@@ -533,7 +566,7 @@ export class BookingService {
 
 			if (!message || !message.id) {
 				const channel = await this.bot.channels.fetch(config.channels.users) as TextChannel;
-				statusMessage = await channel.send(user, {});
+				statusMessage = await channel.send({ content: user.toString() });
 			} else {
 				const channel = await this.bot.channels.fetch(message.channel) as TextChannel;
 				statusMessage = await channel.messages.fetch(message.id);
@@ -589,26 +622,6 @@ export class BookingService {
 			const current = moment().toDate();
 
 			if (current > reserve) {
-				this.logger.log(`Processing reservation ${booking.id}`);
-
-				// Set status so it is not processed again
-				booking.status = BookingStatus.RESERVING;
-				await booking.save();
-
-				// Send request for server
-				const provider = tierConfig.provider;
-				const server = await BookingService.sendServerCreateRequest({
-					game: config.game,
-					region: booking.region,
-					provider,
-					data: {
-						sdrEnable: tierConfig.sdrEnable || false,
-						closeMinPlayers: tierConfig.minPlayers || 2,
-						closeIdleTime: tierConfig.idleTime || 900,
-						closeWaitTime: tierConfig.waitTime || 300
-					}
-				});
-
 				// Send a status message for booking
 				const userChannel = await this.bot.channels.fetch(config.channels.users) as TextChannel;
 				const user = await this.bot.users.fetch(booking.bookingFor);
@@ -616,17 +629,70 @@ export class BookingService {
 					userChannel, user, MessageType.INFO,
 					await this.i18n.t("BOOKING.STARTING"))
 
-				booking.messages = {
-					start: {
-						id: statusMessage.id,
-						channel: statusMessage.channel.id
+				if (typeof tierConfig.provider === "string") {
+					await this.processReservation(booking, statusMessage, tierConfig.provider)
+				} else if (Array.isArray(tierConfig.provider)) {
+					for (const [i, provider] of tierConfig.provider.entries()) {
+						if (await this.processReservation(
+							booking, statusMessage, provider,
+							i === tierConfig.provider.length - 1
+						))
+							break;
 					}
-				};
-				booking.status = BookingStatus.STARTING;
-				booking.server = server._id;
-				await booking.save();
+				}
 			}
 		}
+	}
+
+	async processReservation(booking: Booking, statusMessage: Message, provider: string, failOnProviderOverload: boolean = true) {
+		this.logger.log(`Processing reservation ${booking.id}`);
+
+		// Set status so it is not processed again
+		booking.status = BookingStatus.RESERVING;
+		await booking.save();
+
+		try {
+			const serverRequest = await this.getDefaultServerRequest(booking.bookingFor, booking.region, booking.tier, provider);
+			this.logger.debug(`Server request object: ${JSON.stringify(serverRequest, null, 2)}`)
+
+			// Send request for server
+			const server = await BookingService.sendServerCreateRequest(serverRequest);
+
+			booking.messages = {
+				start: {
+					id: statusMessage.id,
+					channel: statusMessage.channel.id
+				}
+			};
+			booking.status = BookingStatus.STARTING;
+			booking.server = server._id;
+			await booking.save();
+			return true;
+		} catch (error) {
+			this.logger.error("Failed to process server reservation", error);
+			this.logger.error(`${JSON.stringify(error.response?.data, null, 2)}`);
+
+			// Provider has reached the limit
+			if (error.response?.status === 429) {
+				failOnProviderOverload && await this.messageService.editMessageI18n(statusMessage, MessageType.ERROR, "BOOKING.PROVIDER_OVERLOADED");
+				return false;
+			}
+
+			await this.messageService.editMessageI18n(statusMessage, MessageType.ERROR, "BOOKING.START_FAILED");
+			return true;
+		}
+	}
+
+	async getDefaultServerRequest(user: string, region: string, tier: string, provider: string): Promise<Server> {
+		const request = {
+			game: config.game,
+			region,
+			provider,
+			data: {}
+		}
+
+		const tierConfig = this.getTierConfig(region, tier);
+		return this.updateServerRequest(request, user, tierConfig);
 	}
 
 	/**
@@ -809,7 +875,7 @@ export class BookingService {
 		const user: User = member instanceof GuildMember ? member.user : member;
 
 		try {
-			await ( await user.createDM() ).send(BookingService.buildConnectMessage(server));
+			await ( await user.createDM() ).send({ embeds: [ BookingService.buildConnectMessage(server) ] });
 			if (!options.statusMessage && !options.noStatusMessage) {
 				const channel = await this.bot.channels.fetch(config.channels.users) as TextChannel;
 				await this.messageService.sendMessageI18n(
@@ -846,18 +912,27 @@ export class BookingService {
 	 * @param server
 	 */
 	private static buildConnectMessage(server: Server) {
-		const connectString = `connect ${server.ip}:${server.port}; password ${server.data.password};`
-		const connectRconString = `${connectString} rcon_password ${server.data.rconPassword};`
-		const connectTvString = `connect ${server.ip}:${server.data.tvPort}`;
-		// TODO: Needs better handling
+		let connectString = `connect ${server.ip}:${server.port};`
+		if (server.data.password) {
+			connectString += ` password "${server.data.password}";`
+		}
+
+		let connectRconString = `${connectString}`
+		if (server.data.rconPassword) {
+			connectRconString += ` rcon_password "${server.data.rconPassword}";`
+		}
+
+		let connectTvString = `connect ${server.ip}:${server.data.tvPort};`;
+		if (server.data.tvPassword) {
+			connectTvString += ` rcon_password "${server.data.tvPassword}";`
+		}
+
 		const hatchPort = server.port === 27015 ? 27017 : server.port + 2
 		const hiveUrl = `https://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.data.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.data.rconPassword)}`;
 
 		return MessageService.buildMessageEmbed(MessageType.SUCCESS)
 			.setTitle("Bookings")
 			.setDescription(`Your server is ready\n**Connect String with RCON**\`\`\`${connectRconString}\`\`\`\n**Connect String**\`\`\`${connectString}\`\`\`\n**SourceTV Details**\`\`\`${connectTvString}\`\`\``)
-			.addField("Password", `\`${server.data.password}\``, true)
-			.addField("RCON Password", `\`${server.data.rconPassword}\``, true)
 			.addField("Region", `\`${server.region}\``, true)
 			.addField("Server Control", `[Click here](${hiveUrl})`, false);
 	}
