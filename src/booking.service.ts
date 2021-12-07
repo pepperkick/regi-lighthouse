@@ -20,6 +20,7 @@ import { Regions, Region, RegionTier } from "./objects/region.interface";
 import { getDateFormattedRelativeTime } from "./utils";
 import { Game } from "./objects/game.enum";
 import { PreferenceService } from "./preference.service";
+import { APIInteractionGuildMember } from "discord-api-types";
 
 @Injectable()
 export class BookingService {
@@ -325,17 +326,41 @@ export class BookingService {
 			...server.data,
 			closeMinPlayers: tierConfig.minPlayers || 2,
 			closeIdleTime: tierConfig.idleTime || 900,
-			closeWaitTime: tierConfig.waitTime || 300
+			closeWaitTime: tierConfig.waitTime || 300,
+			sdrEnable: false,
+			password: "*",
+			rconPassword: "*",
+			servername: config.preferences.serverHostname,
+			tvName: config.preferences.serverTvName
 		}
 
-		data = await this.preference.getData(user, "tf2_password");
-		server.data.password = data === "" ? "" : !data ? "*" : data;
+		const guild = await this.bot.guilds.fetch(config.guild);
+		const member = await guild.members.fetch(user);
 
-		data = await this.preference.getData(user, "tf2_rcon_password");
-		server.data.rconPassword = data === "" ? "" : !data ? "*" : data;
+		if (this.userHasRoleFromSlug(member, config.features.settings.serverPassword)) {
+			data = await this.preference.getData(user, this.preference.Keys.serverPassword);
+			server.data.password = data === "" ? "" : !data ? "*" : data;
+		}
 
-		data = await this.preference.getData(user, "tf2_sdr_mode");
-		server.data.sdrEnable = data;
+		if (this.userHasRoleFromSlug(member, config.features.settings.serverRconPassword)) {
+			data = await this.preference.getData(user, this.preference.Keys.serverRconPassword);
+			server.data.rconPassword = data === "" ? "" : !data ? "*" : data;
+		}
+
+		if (this.userHasRoleFromSlug(member, config.features.settings.serverTf2ValveSdr)) {
+			data = await this.preference.getData(user, this.preference.Keys.serverTf2ValveSdr);
+			server.data.sdrEnable = data;
+		}
+
+		if (this.userHasRoleFromSlug(member, config.features.settings.serverHostname)) {
+			data = await this.preference.getData(user, this.preference.Keys.serverHostname);
+			server.data.servername = data;
+		}
+
+		if (this.userHasRoleFromSlug(member, config.features.settings.serverTvName)) {
+			data = await this.preference.getData(user, this.preference.Keys.serverTvName);
+			server.data.tvName = data;
+		}
 
 		return server
 	}
@@ -436,7 +461,7 @@ export class BookingService {
 
 		for (const i of keys) {
 			const region: Region = regions[i];
-			const tags = region.tags;
+			const tags = region.tags || [];
 
 			tags.forEach(tag => allTags.includes(tag) || allTags.push(tag))
 		}
@@ -883,12 +908,66 @@ export class BookingService {
 	}
 
 	/**
+	 * Check if the user has a specific role
+	 *
+	 * @param member
+	 * @param role
+	 */
+	userHasRole(member: GuildMember | APIInteractionGuildMember, role: string) {
+		if (member instanceof GuildMember) {
+			return !!member.roles.cache.get(role);
+		} else {
+			return member.roles?.includes(role);
+		}
+	}
+
+	/**
+	 * Check if the user has a specific role
+	 *
+	 * @param member
+	 * @param access Simplified premium role strings or role ID, example: T1, T23, T13, T123
+	 */
+	userHasRoleFromSlug(member: GuildMember | APIInteractionGuildMember, access: boolean | string) {
+		if (typeof access === "boolean") {
+			return access;
+		}
+
+		if (access.charAt(0) === "F") {
+			return true;
+		}
+
+		if (access.charAt(0) !== "T") {
+			return this.userHasRole(member, access);
+		}
+
+		access = access.substring(1);
+
+		let i = access.length;
+		while (i--) {
+			switch(access.charAt(i)) {
+				case "1":
+					if (this.isUserTier1(member))
+						return true;
+					break;
+				case "2":
+					if (this.isUserTier2(member))
+						return true;
+					break;
+				case "3":
+					if (this.isUserTier3(member))
+						return true;
+					break;
+			}
+		}
+	}
+
+	/**
 	 * Check if the user has premium tier 1 role
 	 *
 	 * @param member
 	 */
-	isUserTier1(member: GuildMember) {
-		return config.roles.premium_tier_1 === "<bypass>" ? true : !!member.roles.cache.get(config.roles.premium_tier_1);
+	isUserTier1(member: GuildMember | APIInteractionGuildMember) {
+		return config.roles.premium_tier_1 === "<bypass>" ? true : this.userHasRole(member, config.roles.premium_tier_1);
 
 	}
 
@@ -897,8 +976,8 @@ export class BookingService {
 	 *
 	 * @param member
 	 */
-	isUserTier2(member: GuildMember) {
-		return config.roles.premium_tier_2 === "<bypass>" ? true : !!member.roles.cache.get(config.roles.premium_tier_2);
+	isUserTier2(member: GuildMember | APIInteractionGuildMember) {
+		return config.roles.premium_tier_2 === "<bypass>" ? true : this.userHasRole(member, config.roles.premium_tier_2);
 	}
 
 	/**
@@ -906,8 +985,8 @@ export class BookingService {
 	 *
 	 * @param member
 	 */
-	isUserTier3(member: GuildMember) {
-		return config.roles.premium_tier_3 === "<bypass>" ? true : !!member.roles.cache.get(config.roles.premium_tier_3);
+	isUserTier3(member: GuildMember | APIInteractionGuildMember) {
+		return config.roles.premium_tier_3 === "<bypass>" ? true : this.userHasRole(member, config.roles.premium_tier_3);
 	}
 
 	/**

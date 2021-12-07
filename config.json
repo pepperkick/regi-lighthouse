@@ -32,11 +32,20 @@
   "features": {
     "reservation": false,
     "multiBooking": false,
-    "providerSelector": true
+    "providerSelector": true,
+    "settings": {
+      "serverPassword": true,
+      "serverRconPassword": true,
+      "serverTf2ValveSdr": true,
+      "serverHostname": true,
+      "serverTvName": true
+    }
   },
   "preferences": {
     "defaultFreeTier": "free",
-    "defaultPremiumTier": "premium"
+    "defaultPremiumTier": "premium",
+    "serverHostname": "",
+    "serverTvName": ""
   },
   "game": "",
   "regions": {

@@ -5,6 +5,14 @@ import { Preference } from "./preference.model";
 
 export class PreferenceService {
 	private readonly logger = new Logger(PreferenceService.name);
+	readonly Keys = {
+		serverPassword: "server_password",
+		serverRconPassword: "server_rcon_password",
+		serverTf2ValveSdr: "server_tf2_sdr_mode",
+		serverHostname: "server_hostname",
+		serverTvName: "server_source_tv_name"
+	}
+
 
 	constructor(
 		@InjectModel(Preference.name)
@@ -29,7 +37,7 @@ export class PreferenceService {
 		preference.markModified('data');
 		await preference.save();
 
-		console.log(preference)
+		this.logger.debug(preference)
 	}
 
 	async getData(id: string, key: string) {
