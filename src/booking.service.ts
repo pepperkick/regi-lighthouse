@@ -82,6 +82,14 @@ export class BookingService {
 	}
 
 	/**
+	 * Get user's active booking
+	 */
+	async getActiveUserBooking(user: string): Promise<Booking> {
+		return this.Booking.findOne(
+			{ bookingFor: user, $or: BOOKING_ACTIVE_STATUS_CONDITION });
+	}
+
+	/**
 	 * Get a region active bookings
 	 */
 	async getActiveRegionBookings(region: string): Promise<Booking[]> {
@@ -159,6 +167,29 @@ export class BookingService {
 		const res = await rcon.send(command);
 		await rcon.disconnect();
 		return res;
+	}
+
+	static async getHatchApiUrl(booking: Booking, api: string) {
+		const server = await BookingService.getServerInfo(booking.server);
+		const hatchPort = server.port === 27015 ? 27017 : server.port + 2
+		if (api.charAt(0) === "/") api = api.slice(1)
+		return `http://${server.ip}:${hatchPort}/${api}?password=${server.data.hatchPassword}`
+	}
+
+	/**
+	 * Get demos file list from the server
+	 */
+	static async getServerDemosList(booking: Booking) {
+		const url = await this.getHatchApiUrl(booking, "files/demos");
+		return (await axios.get(url)).data;
+	}
+
+	/**
+	 * Get logs file list from the server
+	 */
+	static async getServerLogsList(booking: Booking) {
+		const url = await this.getHatchApiUrl(booking, "files/logs");
+		return (await axios.get(url)).data;
 	}
 
 	/**
@@ -338,27 +369,27 @@ export class BookingService {
 		const member = await guild.members.fetch(user);
 
 		if (this.userHasRoleFromSlug(member, config.features.settings.serverPassword)) {
-			data = await this.preference.getData(user, this.preference.Keys.serverPassword);
+			data = await this.preference.getData(user, PreferenceService.Keys.serverPassword);
 			server.data.password = data === "" ? "" : !data ? "*" : data;
 		}
 
 		if (this.userHasRoleFromSlug(member, config.features.settings.serverRconPassword)) {
-			data = await this.preference.getData(user, this.preference.Keys.serverRconPassword);
+			data = await this.preference.getData(user, PreferenceService.Keys.serverRconPassword);
 			server.data.rconPassword = data === "" ? "" : !data ? "*" : data;
 		}
 
 		if (this.userHasRoleFromSlug(member, config.features.settings.serverTf2ValveSdr)) {
-			data = await this.preference.getData(user, this.preference.Keys.serverTf2ValveSdr);
+			data = await this.preference.getData(user, PreferenceService.Keys.serverTf2ValveSdr);
 			server.data.sdrEnable = data;
 		}
 
 		if (this.userHasRoleFromSlug(member, config.features.settings.serverHostname)) {
-			data = await this.preference.getData(user, this.preference.Keys.serverHostname);
+			data = await this.preference.getData(user, PreferenceService.Keys.serverHostname);
 			server.data.servername = data;
 		}
 
 		if (this.userHasRoleFromSlug(member, config.features.settings.serverTvName)) {
-			data = await this.preference.getData(user, this.preference.Keys.serverTvName);
+			data = await this.preference.getData(user, PreferenceService.Keys.serverTvName);
 			server.data.tvName = data;
 		}
 

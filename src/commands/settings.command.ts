@@ -54,7 +54,7 @@ export class SettingsCommand {
 		password = password.replace("$", "");
 		password = password.replace('"', "");
 
-		await SettingsCommand.service.storeData(interaction.user.id, SettingsCommand.service.Keys.serverPassword, password);
+		await SettingsCommand.service.storeData(interaction.user.id, PreferenceService.Keys.serverPassword, password);
 
 		let message = Strings.PASSWORD_SAVED;
 		if (!this.userHasAccess(interaction.member, config.features.settings.serverPassword)) {
@@ -100,7 +100,7 @@ export class SettingsCommand {
 			message += `\n${Strings.SETTING_NO_ACCESS}`
 		}
 
-		await SettingsCommand.service.storeData(interaction.user.id, SettingsCommand.service.Keys.serverRconPassword, password);
+		await SettingsCommand.service.storeData(interaction.user.id, PreferenceService.Keys.serverRconPassword, password);
 		await interaction.reply({
 			content: message,
 			ephemeral: true,
@@ -125,7 +125,7 @@ export class SettingsCommand {
 			message += `\n${Strings.SETTING_NO_ACCESS}`
 		}
 
-		await SettingsCommand.service.storeData(interaction.user.id, SettingsCommand.service.Keys.serverTf2ValveSdr, enable);
+		await SettingsCommand.service.storeData(interaction.user.id, PreferenceService.Keys.serverTf2ValveSdr, enable);
 		await interaction.reply({
 			content: message,
 			ephemeral: true,
@@ -154,7 +154,7 @@ export class SettingsCommand {
 			message += `\n${Strings.SETTING_NO_ACCESS}`
 		}
 
-		await SettingsCommand.service.storeData(interaction.user.id, SettingsCommand.service.Keys.serverHostname, name);
+		await SettingsCommand.service.storeData(interaction.user.id, PreferenceService.Keys.serverHostname, name);
 		await interaction.reply({
 			content: message,
 			ephemeral: true,
@@ -183,7 +183,7 @@ export class SettingsCommand {
 			message += `\n${Strings.SETTING_NO_ACCESS}`
 		}
 
-		await SettingsCommand.service.storeData(interaction.user.id, SettingsCommand.service.Keys.serverTvName, name);
+		await SettingsCommand.service.storeData(interaction.user.id, PreferenceService.Keys.serverTvName, name);
 		await interaction.reply({
 			content: message,
 			ephemeral: true,

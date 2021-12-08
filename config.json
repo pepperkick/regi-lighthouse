@@ -45,7 +45,8 @@
     "defaultFreeTier": "free",
     "defaultPremiumTier": "premium",
     "serverHostname": "",
-    "serverTvName": ""
+    "serverTvName": "",
+    "rconCommonCommands": ["status", "changelevel", "exec"]
   },
   "game": "",
   "regions": {
