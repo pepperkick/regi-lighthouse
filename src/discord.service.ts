@@ -32,8 +32,8 @@ export class DiscordService {
 		client.once("ready", async () => {
 			// init all application commands
 			await client.initApplicationCommands({
-				guild: { log: true },
-				global: { log: true },
+				guild: { log: true, disable: { delete: true } },
+				global: { log: true, disable: { delete: true } },
 			});
 
 			// init permissions; enabled log to see changes

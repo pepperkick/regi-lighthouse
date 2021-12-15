@@ -19,6 +19,7 @@ import { BookingAdminService } from "./booking-admin.service";
 import { I18nService } from "nestjs-i18n";
 import { BookingOptions } from "./objects/booking.interface";
 import { MessageType } from "./objects/message-types.enum";
+import { PreferenceService } from "./preference.service";
 
 @Controller()
 export class BookingControllerDiscord {
@@ -27,6 +28,7 @@ export class BookingControllerDiscord {
 	constructor(
 		private readonly bookingService: BookingService,
 		private readonly bookingAdminService: BookingAdminService,
+		private readonly preferenceService: PreferenceService,
 		private readonly messageService: MessageService,
 		private readonly bot: DiscordClient,
 		private readonly i18n: I18nService
@@ -41,14 +43,13 @@ export class BookingControllerDiscord {
 	@MessageFilter()
 	async userBook(message: Message): Promise<void> {
 		const args = parseMessageArgs(message);
-		const hasTier2 = this.bookingService.isUserTier2(message.member);
-		const hasTier3 = this.bookingService.isUserTier3(message.member);
 		const bookingOptions: BookingOptions = {
 			message,
 			region: null,
 			bookingFor: message.member,
 			bookingBy: message.member,
-			tier: hasTier2 || hasTier3 ? config.preferences.defaultPremiumTier : config.preferences.defaultFreeTier
+			variant: this.bookingService.defaultVariant,
+			tier: this.bookingService.userHasRoleFromSlug(message.member, config.features.premiumBooking) ? config.preferences.defaultPremiumTier : config.preferences.defaultFreeTier
 		}
 
 		// Parse arguments
@@ -96,13 +97,18 @@ export class BookingControllerDiscord {
 		}
 
 		// If tier is not default then check if user has tier 3
-		if (!["free", "premium"].includes(bookingOptions.tier) && (!hasTier3 || !config.features.providerSelector)) {
+		if (!["free", "premium"].includes(bookingOptions.tier) && !this.bookingService.userHasRoleFromSlug(message.member, config.features.providerSelector)) {
 			throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.PROVIDER_SELECTION.RESTRICTED"));
 		}
 
 		// If bookedBy and bookedFor is different then check if bookedBy has tier 3
-		if (bookingOptions.bookingFor !== bookingOptions.bookingBy && (!hasTier3 || !config.features.multiBooking)) {
+		if (bookingOptions.bookingFor !== bookingOptions.bookingBy && !this.bookingService.userHasRoleFromSlug(message.member, config.features.multiBooking)) {
 			throw new WarningMessage(await this.i18n.t("COMMAND.USER.BOOK.MULTI.RESTRICTED"));
+		}
+
+		// Use user's preferred region if present
+		if (!bookingOptions.region) {
+			bookingOptions.region = await this.preferenceService.getDataString(bookingOptions.bookingFor.user.id, PreferenceService.Keys.bookingRegion);
 		}
 
 		// Use default region if available and no region was given
@@ -143,20 +149,16 @@ export class BookingControllerDiscord {
 	@MessageFilter()
 	async userReserve(message: Message): Promise<void> {
 		const args = parseMessageArgs(message);
-		const hasTier2 = this.bookingService.isUserTier2(message.member);
-		const hasTier3 = this.bookingService.isUserTier3(message.member);
 		const bookingOptions: BookingOptions = {
 			message,
 			region: null,
 			bookingFor: message.member,
 			bookingBy: message.member,
+			variant: this.bookingService.defaultVariant,
 			tier: config.preferences.defaultPremiumTier
 		}
 
-		if (!config.features.reservation)
-			throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.RESTRICTED"));
-
-		if (!(hasTier2 || hasTier3))
+		if (!this.bookingService.userHasRoleFromSlug(message.member, config.features.reservation))
 			throw new WarningMessage(await this.i18n.t("COMMAND.USER.RESERVE.RESTRICTED"));
 
 		// Parse arguments
@@ -250,6 +252,7 @@ export class BookingControllerDiscord {
 			region: null,
 			bookingFor: null,
 			bookingBy: message.member,
+			variant: this.bookingService.defaultVariant,
 			tier: "free"
 		}
 

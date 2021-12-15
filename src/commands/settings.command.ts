@@ -1,5 +1,5 @@
 import { Discord, Slash, SlashOption, SlashGroup } from "discordx";
-import { CommandInteraction, GuildMember } from "discord.js";
+import { AutocompleteInteraction, CommandInteraction, GuildMember } from "discord.js";
 import { PreferenceService } from "../preference.service";
 import * as config from "../../config.json";
 import { BookingService } from "../booking.service";
@@ -164,7 +164,7 @@ export class SettingsCommand {
 	@Slash("server-tv-name", { description: "Change your TF2 Server TV Name"})
 	async serverTvName(
 		@SlashOption("name", { description: `Type the new name (Cannot use ', ", $ Symbols)`, required: true })
-		name: string,
+			name: string,
 		interaction: CommandInteraction
 	) {
 		if (!config.features.settings.serverTvName) {
@@ -188,6 +188,35 @@ export class SettingsCommand {
 			content: message,
 			ephemeral: true,
 		})
+	}
+
+	@Slash("booking-region", { description: "Set your preferred booking region"})
+	async bookingRegion(
+		@SlashOption("region", {
+			description: `Type the region name`,
+			required: true,
+			autocomplete: true,
+			type: "STRING"
+		})
+		region: string,
+		interaction: CommandInteraction | AutocompleteInteraction
+	) {
+		if (interaction.isAutocomplete()) {
+			const focusedOption = interaction.options.getFocused(true);
+			if (focusedOption.name === "region") {
+				const text = interaction.options.getString("region")
+				return interaction.respond(
+					SettingsCommand.bookingService.searchRegions(text.toLocaleLowerCase()).slice(0, 24)
+				)
+			}
+		} else {
+			let message = Strings.SETTING_SAVED;
+			await SettingsCommand.service.storeData(interaction.user.id, PreferenceService.Keys.bookingRegion, region);
+			await interaction.reply({
+				content: message,
+				ephemeral: true,
+			})
+		}
 	}
 
 	userHasAccess(member: GuildMember | APIInteractionGuildMember, access: boolean | string) {

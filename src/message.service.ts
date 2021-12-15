@@ -3,6 +3,7 @@ import { GuildMember, Message, MessageEmbed, TextChannel, User } from "discord.j
 import * as config from "../config.json";
 import {I18nService} from "nestjs-i18n";
 import {Injectable} from "@nestjs/common";
+import { APIInteractionGuildMember } from "discord-api-types";
 
 @Injectable()
 export class MessageService {
@@ -78,7 +79,7 @@ export class MessageService {
      * @param type
      * @param text
      */
-    async sendMessage(target: Message | TextChannel, user: User | GuildMember, type: MessageType, text: string): Promise<Message> {
+    async sendMessage(target: Message | TextChannel, user: User | GuildMember | APIInteractionGuildMember, type: MessageType, text: string): Promise<Message> {
         if (target instanceof Message)
             return target.reply({
                 embeds: [MessageService.buildTextMessage(type, text)]

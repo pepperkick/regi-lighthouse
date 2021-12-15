@@ -57,6 +57,23 @@
   // Game to use for creating server
   "game": "",
   
+  // Config for game variants
+  "variants": {
+    "<name>": {
+      // Printable name for the variant
+      "name": "TF2 Competitive",
+
+      // Consider this variant as default for book commands
+      "default": "boolean",
+      
+      // Git repo to use, SSH only
+      "gitRepo": "string",
+      
+      // Git deploy key to access the git repo, key encoded in Base64
+      "gitKey": "string"
+    }
+  },
+  
   // Config for regions
   "regions": {
     "<name>": {

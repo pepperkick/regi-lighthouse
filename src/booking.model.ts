@@ -22,6 +22,9 @@ export class Booking extends Document {
     tier: string
 
     @Prop()
+    variant: string
+
+    @Prop()
     server?: string
 
     @Prop({ type: String })

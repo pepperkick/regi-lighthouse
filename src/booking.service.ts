@@ -21,11 +21,13 @@ import { getDateFormattedRelativeTime } from "./utils";
 import { Game } from "./objects/game.enum";
 import { PreferenceService } from "./preference.service";
 import { APIInteractionGuildMember } from "discord-api-types";
+import { Variant } from "./objects/variant.interface";
 
 @Injectable()
 export class BookingService {
 	regionSet = {}
 	defaultRegion = ""
+	defaultVariant = ""
 	private readonly logger = new Logger(BookingService.name);
 
 	constructor(
@@ -47,6 +49,14 @@ export class BookingService {
 			for (const i of regions[index].alias) {
 				this.regionSet[i] = index;
 			}
+		}
+
+		const variants = config.variants;
+		for (const index in variants) {
+			if (!variants.hasOwnProperty(index)) continue;
+
+			if (variants[index].default)
+				this.defaultVariant = index;
 		}
 
 		setInterval(async () => {
@@ -192,6 +202,18 @@ export class BookingService {
 		return (await axios.get(url)).data;
 	}
 
+	static getGameVariantList() {
+		const variants = config.variants;
+		const keys = Object.keys(variants);
+		const list = {}
+
+		for (const i of keys) {
+			list[variants[i].name] = i
+		}
+
+		return list;
+	}
+
 	/**
 	 * Validate the book request
 	 *
@@ -201,16 +223,21 @@ export class BookingService {
 		const { region, tier } = options
 
 		// Check if the user already has booking
-		const userBookings = await this.getActiveUserBookings(options.bookingFor.id);
+		const userBookings = await this.getActiveUserBookings(this.getMemberId(options.bookingFor));
 		if (userBookings.length !== 0)
 			throw new WarningMessage(await this.i18n.t("BOOKING.ALREADY_EXISTS"));
 
 		// Check if the user already has reservations
-		const userReservations = await this.getUserReservations(options.bookingFor.id);
+		const userReservations = await this.getUserReservations(this.getMemberId(options.bookingFor));
 		if (userReservations.length !== 0)
 			throw new WarningMessage(await this.i18n.t("BOOKING.RESERVATION_ALREADY_EXISTS"));
 
 		const regionConfig = this.getRegionConfig(region);
+
+		// Check if the region exists
+		if (!regionConfig) {
+			throw new WarningMessage(await this.i18n.t("REGION.UNKNOWN"));
+		}
 
 		// Check if the user has access to the region
 		if (!this.canUserAccessRegion(region, options.bookingBy))
@@ -259,18 +286,20 @@ export class BookingService {
 	 * @param options
 	 * */
 	async createBookingRequest(options: BookingOptions) {
-		const { message, region, tier } = options
+		const { message, region, tier, variant } = options
 		const tierConfig = this.getTierConfig(region, tier);
+		const bookingBy = this.getMemberUser(options.bookingBy);
+		const bookingFor = this.getMemberUser(options.bookingFor);
 
-		this.logger.log(`Received booking request from ${options.bookingBy.id} (${options.bookingBy.user.tag}) for ${options.bookingFor.id} (${options.bookingFor.user.tag}) at region ${region} (${tier})`);
+		this.logger.log(`Received booking request from ${bookingBy.id} (${bookingBy.username}) for ${bookingFor.id} (${bookingFor.username}) at region ${region} (${tier})`);
 
 		if (options.reserveAt) {
 			// Create booking object
 			const booking = new this.Booking({
-				tier, region,
+				tier, region, variant,
 				createdAt: new Date(),
-				bookingFor: options.bookingFor.id,
-				bookingBy: options.bookingBy.id,
+				bookingFor: bookingFor.id,
+				bookingBy: bookingBy.id,
 				status: BookingStatus.RESERVED
 			});
 			booking.reservedAt = options.reserveAt;
@@ -294,7 +323,6 @@ export class BookingService {
 			userChannel, options.bookingFor, MessageType.INFO,
 			await this.i18n.t("BOOKING.STARTING"))
 
-
 		if (typeof tierConfig.provider === "string") {
 			await this.createBooking(options, statusMessage, tierConfig.provider)
 		} else if (Array.isArray(tierConfig.provider)) {
@@ -309,10 +337,13 @@ export class BookingService {
 	}
 
 	async createBooking(options: BookingOptions, statusMessage: Message, provider: string, failOnProviderOverload: boolean = true) {
-		const { message, region, tier } = options
+		const { message, region, tier, variant } = options
+		const bookingBy = this.getMemberUser(options.bookingBy);
+		const bookingFor = this.getMemberUser(options.bookingFor);
 
 		try {
-			const serverRequest = await this.getDefaultServerRequest(options.bookingFor.id, region, tier, provider);
+			const serverRequest = await this.getDefaultServerRequest(
+				bookingFor.id, region, tier, provider, variant);
 			this.logger.debug(`Server request object: ${JSON.stringify(serverRequest, null, 2)}`)
 
 			// Send request for booking
@@ -320,10 +351,10 @@ export class BookingService {
 
 			// Create booking object
 			const booking = new this.Booking({
-				tier, region,
+				tier, region, variant,
 				createdAt: new Date(),
-				bookingFor: options.bookingFor.id,
-				bookingBy: options.bookingBy.id,
+				bookingFor: bookingFor.id,
+				bookingBy: bookingBy.id,
 				status: BookingStatus.STARTING,
 				server: server._id
 			});
@@ -350,19 +381,22 @@ export class BookingService {
 		}
 	}
 
-	async updateServerRequest(server: Server, user: string, tierConfig: RegionTier) {
+	async updateServerRequest(server: Server, user: string, tierConfig: RegionTier, variantConfig: Variant) {
 		let data;
 
 		server.data = {
 			...server.data,
-			closeMinPlayers: tierConfig.minPlayers || 2,
-			closeIdleTime: tierConfig.idleTime || 900,
-			closeWaitTime: tierConfig.waitTime || 300,
+			closeMinPlayers: variantConfig.minPlayers || tierConfig.minPlayers || 2,
+			closeIdleTime: variantConfig.idleTime || tierConfig.idleTime || 900,
+			closeWaitTime: variantConfig.waitTime || tierConfig.waitTime || 300,
 			sdrEnable: false,
 			password: "*",
 			rconPassword: "*",
 			servername: config.preferences.serverHostname,
-			tvName: config.preferences.serverTvName
+			tvName: config.preferences.serverTvName,
+			map: variantConfig.map,
+			gitRepository: variantConfig.gitRepo,
+			gitDeployKey: variantConfig.gitKey
 		}
 
 		const guild = await this.bot.guilds.fetch(config.guild);
@@ -457,6 +491,10 @@ export class BookingService {
 				await this.messageService.editMessageI18n(
 					statusMessage, MessageType.SUCCESS, "BOOKING.STOP_SUCCESS");
 				return;
+			} else if (error.response.status === 451) {
+				await this.messageService.editMessage(
+					statusMessage, MessageType.WARNING, "You server has been unbooked automatically and it is currently stopping your server. Please wait until it completes.");
+				return;
 			}
 
 			await this.messageService.editMessageI18n(statusMessage, MessageType.ERROR, "BOOKING.STOP_FAILED");
@@ -481,7 +519,7 @@ export class BookingService {
 			}
 
 			const server = await BookingService.getServerInfo(userBookings[0].server);
-			await this.sendServerDetailsViaDM(user, server, options);
+			await this.sendServerDetailsViaDM(user, userBookings[0], server, options);
 		}
 	}
 
@@ -498,6 +536,36 @@ export class BookingService {
 		}
 
 		return allTags;
+	}
+
+	searchRegions(text: string) {
+		const regions = config.regions;
+		const keys = Object.keys(regions);
+		const filter = [];
+
+		for (const i of keys) {
+			const region: Region = regions[i];
+			const tags = region.tags || [];
+			const match = tags.filter(tag => tag.includes(text))
+
+			if (match.length > 0)
+				filter.push({ name: region.name, value: i })
+		}
+
+		return filter;
+	}
+
+	searchTiers(region: string, text: string) {
+		const tiers = this.getTierConfigs(region)
+		const keys = Object.keys(tiers);
+		const filter = [];
+
+		for (const i of keys) {
+			if (i.includes(text))
+				filter.push({ name: i, value: i })
+		}
+
+		return filter;
 	}
 
 	/**
@@ -679,7 +747,7 @@ export class BookingService {
 			}
 
 			if (status === ServerStatus.IDLE) {
-				await this.sendServerDetailsViaDM(user, server, { statusMessage });
+				await this.sendServerDetailsViaDM(user, booking, server, { statusMessage });
 				await this.messageService.editMessageI18n(statusMessage, MessageType.SUCCESS, "BOOKING.START_SUCCESS");
 
 				// Workaround: Set logstf API key to kaiend for binarylane to fix logs not uploading issue.
@@ -758,7 +826,8 @@ export class BookingService {
 		await booking.save();
 
 		try {
-			const serverRequest = await this.getDefaultServerRequest(booking.bookingFor, booking.region, booking.tier, provider);
+			const serverRequest = await this.getDefaultServerRequest(
+				booking.bookingFor, booking.region, booking.tier, provider, booking.variant);
 			this.logger.debug(`Server request object: ${JSON.stringify(serverRequest, null, 2)}`)
 
 			// Send request for server
@@ -789,7 +858,7 @@ export class BookingService {
 		}
 	}
 
-	async getDefaultServerRequest(user: string, region: string, tier: string, provider: string): Promise<Server> {
+	async getDefaultServerRequest(user: string, region: string, tier: string, provider: string, variant: string): Promise<Server> {
 		const request = {
 			game: config.game,
 			region,
@@ -798,7 +867,8 @@ export class BookingService {
 		}
 
 		const tierConfig = this.getTierConfig(region, tier);
-		return this.updateServerRequest(request, user, tierConfig);
+		const variantConfig = this.getVariantConfig(variant);
+		return this.updateServerRequest(request, user, tierConfig, variantConfig);
 	}
 
 	/**
@@ -887,6 +957,15 @@ export class BookingService {
 	}
 
 	/**
+	 * Get all region tiers
+	 *
+	 * @param region
+	 */
+	getTierConfigs(region: string): { [key: string]: RegionTier } {
+		return this.getRegionConfig(region)?.tiers;
+	}
+
+	/**
 	 * Check if tier is valid
 	 *
 	 * @param region
@@ -895,6 +974,16 @@ export class BookingService {
 	isTierValid(region: string, tier: string): boolean {
 		return !!this.getTierConfig(region, tier);
 	}
+
+	/**
+	 * Return the variant config
+	 *
+	 * @param variant
+	 */
+	getVariantConfig(variant: string): Region {
+		return config.variants[variant];
+	}
+
 
 	/**
 	 * Get user's reservations
@@ -921,18 +1010,30 @@ export class BookingService {
 		return runningBookings.length < tierConfig.limit;
 	}
 
+	getMemberId(member: GuildMember | APIInteractionGuildMember) {
+		if (member instanceof GuildMember) {
+			return member.id;
+		} else {
+			return member.user.id;
+		}
+	}
+
+	getMemberUser(member: GuildMember | APIInteractionGuildMember) {
+		return member.user;
+	}
+
 	/**
 	 * Check if the user has access to the region
 	 *
 	 * @param region
 	 * @param member
 	 */
-	canUserAccessRegion(region: string, member: GuildMember) {
+	canUserAccessRegion(region: string, member: GuildMember | APIInteractionGuildMember) {
 		const slug = this.regionSet[region];
 		const object = config.regions[slug];
 
 		if (object.restricted && object.restricted !== "") {
-			return !!member.roles.cache.get(object.restricted);
+			return this.userHasRole(member, object.restricted)
 		}
 
 		return true;
@@ -1025,17 +1126,20 @@ export class BookingService {
 	 * If the DM fails then the status message will be updated or new message will be sent
 	 *
 	 * @param member
+	 * @param booking
 	 * @param server
 	 * @param options
 	 */
-	async sendServerDetailsViaDM(member: User | GuildMember, server: Server, options?: {
+	async sendServerDetailsViaDM(member: User | GuildMember, booking: Booking, server: Server, options?: {
 		statusMessage?: Message,
 		noStatusMessage?: boolean
 	}) {
 		const user: User = member instanceof GuildMember ? member.user : member;
 
 		try {
-			await ( await user.createDM() ).send({ embeds: [ BookingService.buildConnectMessage(server) ] });
+			await ( await user.createDM() )
+				.send({ embeds: [ BookingService.buildConnectMessage(booking, server) ] });
+
 			if (!options.statusMessage && !options.noStatusMessage) {
 				const channel = await this.bot.channels.fetch(config.channels.users) as TextChannel;
 				await this.messageService.sendMessageI18n(
@@ -1069,9 +1173,10 @@ export class BookingService {
 	/**
 	 * Build a connect message for the booking
 	 *
+	 * @param booking
 	 * @param server
 	 */
-	private static buildConnectMessage(server: Server) {
+	private static buildConnectMessage(booking: Booking, server: Server) {
 		let connectString = "";
 		if (server.data.sdrEnable) {
 			connectString += `connect ${server.data.sdrIp}:${server.data.sdrPort};`
@@ -1107,6 +1212,7 @@ export class BookingService {
 			.setTitle("Bookings")
 			.setDescription(`Your server is ready\n**Connect String with RCON**\`\`\`${connectRconString}\`\`\`\n**Connect String**\`\`\`${connectString}\`\`\`\n**SourceTV Details**\`\`\`${connectTvString}\`\`\``)
 			.addField("Region", `\`${server.region}\``, true)
+			.addField("Variant", `\`${booking.variant}\``, true)
 			.addField("Server Control", `[Click here](${hiveUrl})`, false);
 
 		if (server.data.sdrEnable) {

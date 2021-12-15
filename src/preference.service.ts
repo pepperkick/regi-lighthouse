@@ -11,7 +11,8 @@ export class PreferenceService {
 		serverTf2ValveSdr: "server_tf2_sdr_mode",
 		serverHostname: "server_hostname",
 		serverTvName: "server_source_tv_name",
-		rconCommandHistory: "rcon_command_history"
+		rconCommandHistory: "rcon_command_history",
+		bookingRegion: "booking_preferred_region"
 	}
 
 	constructor(
@@ -41,6 +42,11 @@ export class PreferenceService {
 	}
 
 	async getData(id: string, key: string): Promise<string | string[] | number | number[] | boolean | boolean[]> {
+		const preference = await this.getById(id);
+		return preference ? preference.data[key] : null;
+	}
+
+	async getDataString(id: string, key: string): Promise<string> {
 		const preference = await this.getById(id);
 		return preference ? preference.data[key] : null;
 	}

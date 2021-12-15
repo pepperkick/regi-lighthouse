@@ -30,9 +30,11 @@
     "league_partner": ""
   },
   "features": {
-    "reservation": false,
-    "multiBooking": false,
+    "reservation": true,
+    "multiBooking": true,
     "providerSelector": true,
+    "variantSelector": true,
+    "premiumBooking": true,
     "settings": {
       "serverPassword": true,
       "serverRconPassword": true,
@@ -49,6 +51,8 @@
     "rconCommonCommands": ["status", "changelevel", "exec"]
   },
   "game": "",
+  "variants": {
+  },
   "regions": {
   }
 }

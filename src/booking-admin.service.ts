@@ -1,7 +1,7 @@
 import * as moment from "moment";
 import { Injectable, Logger } from "@nestjs/common";
 import { BookingService } from "./booking.service";
-import { Message, User } from "discord.js";
+import { GuildMember, Message, User } from "discord.js";
 import { MessageService } from "./message.service";
 import { MessageType } from "./objects/message-types.enum";
 import { InjectModel } from "@nestjs/mongoose";
@@ -14,6 +14,7 @@ import { BookingOptions } from "./objects/booking.interface";
 import { WarningMessage } from "./objects/message.exception";
 import { I18nService } from "nestjs-i18n";
 import { Server } from "./objects/server.interface";
+import { APIInteractionGuildMember } from "discord-api-types";
 
 @Injectable()
 export class BookingAdminService {
@@ -35,11 +36,13 @@ export class BookingAdminService {
 	 */
 	async validateBookRequest(options: BookingOptions): Promise<boolean> {
 		const { region } = options
+		const bookingBy = this.getMemberUser(options.bookingBy);
+		const bookingFor = this.getMemberUser(options.bookingFor);
 
-		this.logger.log(`Validating admin booking request from ${options.bookingBy.id} for ${options.bookingFor.id} at region ${region}`);
+		this.logger.log(`Validating admin booking request from ${bookingBy.id} for ${bookingFor.id} at region ${region}`);
 
 		// Check if the user already has booking
-		const userBookings = await this.bookingService.getActiveUserBookings(options.bookingFor.id);
+		const userBookings = await this.bookingService.getActiveUserBookings(bookingFor.id);
 		if (userBookings.length !== 0)
 			throw new WarningMessage(await this.i18n.t("BOOKING.ADMIN.ALREADY_EXISTS"));
 
@@ -258,6 +261,7 @@ export class BookingAdminService {
 		}
 
 		text += `\nRegion:      ${booking.region}`;
+		text += `\nVariant:     ${booking.variant}`;
 		text += `\nProvider:    ${server.provider}`;
 
 		if (isRunning) {
@@ -286,5 +290,17 @@ export class BookingAdminService {
 		text += "```";
 
 		return text;
+	}
+
+	getMemberId(member: GuildMember | APIInteractionGuildMember) {
+		if (member instanceof GuildMember) {
+			return member.id;
+		} else {
+			return member.user.id;
+		}
+	}
+
+	getMemberUser(member: GuildMember | APIInteractionGuildMember) {
+		return member.user;
 	}
 }

@@ -1,11 +1,13 @@
-import { GuildMember, Message } from "discord.js";
+import { CommandInteraction, GuildMember, Message } from "discord.js";
+import { APIInteractionGuildMember } from "discord-api-types";
 
 export interface BookingOptions {
-	message: Message
-	bookingFor: GuildMember
-	bookingBy: GuildMember
+	message: Message | CommandInteraction
+	bookingFor: GuildMember | APIInteractionGuildMember
+	bookingBy: GuildMember | APIInteractionGuildMember
 	reserveAt?: Date
 	region: string
+	variant: string
 	tier: string
 }
 
