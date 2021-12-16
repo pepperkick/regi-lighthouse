@@ -16,7 +16,7 @@ import { MessageType } from "./objects/message-types.enum";
 import { ServerStatus } from "./objects/server-status.enum";
 import { Server } from "./objects/server.interface";
 import { BookingOptions } from "./objects/booking.interface";
-import { Regions, Region, RegionTier } from "./objects/region.interface";
+import { Regions, Region, RegionTier, ProviderSizes, ProviderSize } from "./objects/region.interface";
 import { getDateFormattedRelativeTime } from "./utils";
 import { Game } from "./objects/game.enum";
 import { PreferenceService } from "./preference.service";
@@ -288,10 +288,11 @@ export class BookingService {
 	async createBookingRequest(options: BookingOptions) {
 		const { message, region, tier, variant } = options
 		const tierConfig = this.getTierConfig(region, tier);
+		const variantConfig = this.getVariantConfig(variant);
 		const bookingBy = this.getMemberUser(options.bookingBy);
 		const bookingFor = this.getMemberUser(options.bookingFor);
 
-		this.logger.log(`Received booking request from ${bookingBy.id} (${bookingBy.username}) for ${bookingFor.id} (${bookingFor.username}) at region ${region} (${tier})`);
+		this.logger.log(`Received booking request from ${bookingBy.id} (${bookingBy.username}) for ${bookingFor.id} (${bookingFor.username}) at region ${region} (${tier}) [${variant}]`);
 
 		if (options.reserveAt) {
 			// Create booking object
@@ -322,16 +323,41 @@ export class BookingService {
 		const statusMessage = await this.messageService.sendMessage(
 			userChannel, options.bookingFor, MessageType.INFO,
 			await this.i18n.t("BOOKING.STARTING"))
+		const providers = this.getProviderFromOptions(tierConfig.provider, variantConfig.providerSize);
 
-		if (typeof tierConfig.provider === "string") {
-			await this.createBooking(options, statusMessage, tierConfig.provider)
-		} else if (Array.isArray(tierConfig.provider)) {
-			for (const [i, provider] of tierConfig.provider.entries()) {
+		if (typeof providers === "string") {
+			await this.createBooking(options, statusMessage, providers)
+		} else if (Array.isArray(providers)) {
+			for (const [i, provider] of providers.entries()) {
 				if (await this.createBooking(
 					options, statusMessage, provider,
-					i === tierConfig.provider.length - 1
+					i === providers.length - 1
 				))
 					break;
+			}
+		}
+	}
+
+	getProviderFromOptions(provider: string | string[] | ProviderSizes, size: ProviderSize) {
+		if (typeof provider === "string") {
+			return provider
+		}
+
+		if (Array.isArray(provider)) {
+			return provider
+		}
+
+		if (typeof provider === "object") {
+			if (!size) {
+				size = "medium"
+			}
+
+			if (typeof provider[size] === "string") {
+				return provider[size]
+			}
+
+			if (Array.isArray(provider[size])) {
+				return provider[size]
 			}
 		}
 	}
@@ -791,6 +817,7 @@ export class BookingService {
 
 		for (const booking of bookingReservations) {
 			const tierConfig = this.getTierConfig(booking.region, booking.tier);
+			const variantConfig = this.getVariantConfig(booking.variant);
 			const earlyStart = tierConfig.earlyStart || 0;
 			const reserve = moment(booking.reservedAt).subtract(earlyStart, "seconds").toDate();
 			const current = moment().toDate();
@@ -802,14 +829,15 @@ export class BookingService {
 				const statusMessage = await this.messageService.sendMessage(
 					userChannel, user, MessageType.INFO,
 					await this.i18n.t("BOOKING.STARTING"))
+				const providers = this.getProviderFromOptions(tierConfig.provider, variantConfig.providerSize);
 
-				if (typeof tierConfig.provider === "string") {
-					await this.processReservation(booking, statusMessage, tierConfig.provider)
-				} else if (Array.isArray(tierConfig.provider)) {
-					for (const [i, provider] of tierConfig.provider.entries()) {
+				if (typeof providers === "string") {
+					await this.processReservation(booking, statusMessage, providers)
+				} else if (Array.isArray(providers)) {
+					for (const [i, provider] of providers.entries()) {
 						if (await this.processReservation(
 							booking, statusMessage, provider,
-							i === tierConfig.provider.length - 1
+							i === providers.length - 1
 						))
 							break;
 					}
@@ -980,7 +1008,7 @@ export class BookingService {
 	 *
 	 * @param variant
 	 */
-	getVariantConfig(variant: string): Region {
+	getVariantConfig(variant: string): Variant {
 		return config.variants[variant];
 	}
 

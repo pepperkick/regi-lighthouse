@@ -99,6 +99,19 @@
           "limit": 0,
           
           // Lighthouse provider to use for this region
+          // Multiple types are supported
+          // string
+          // "provider": "prov-a"
+          //
+          // string[]
+          // "provider": ["prov-a", "prov-b"]
+          //
+          // object (medium will be default)
+          // "provider": {
+          //   "small": "prov-a-small",
+          //   "medium": ["prov-a", "prov-b"],
+          //   "large": "prob-b-large
+          // }
           "provider": "",
           
           // Minimum number of players needed in the server to not consider as idle

@@ -18,7 +18,7 @@ export interface Region {
 export interface RegionTier {
 	limit: number
 	inUse?: number
-	provider: string | string[]
+	provider: string | string[] | ProviderSizes
 	sdrEnable: boolean
 	minPlayers?: number
 	idleTime?: number
@@ -26,3 +26,11 @@ export interface RegionTier {
 	allowReservation?: boolean
 	earlyStart?: number
 }
+
+export interface ProviderSizes {
+	small: string | string[]
+	medium: string | string[]
+	large: string | string[]
+}
+
+export type ProviderSize = "small" | "medium" | "large"
