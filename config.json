@@ -48,7 +48,8 @@
     "defaultPremiumTier": "premium",
     "serverHostname": "",
     "serverTvName": "",
-    "rconCommonCommands": ["status", "changelevel", "exec"]
+    "rconCommonCommands": ["status", "changelevel", "exec"],
+    "tnts": []
   },
   "game": "",
   "variants": {

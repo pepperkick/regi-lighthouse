@@ -1247,6 +1247,12 @@ export class BookingService {
 			message.addField("Original IP", `Do not share this unless you have connection issues\n\`${server.ip}:${server.port}\``)
 		}
 
+		if (config.preferences.tnts && config.preferences.tnts.length > 0) {
+			const tnts = config.preferences.tnts;
+			const item = tnts[Math.floor(Math.random()*tnts.length)];
+			message.addField(item.header, `\`\`\`${item.message}\`\`\``);
+		}
+
 		return message;
 	}
 }
