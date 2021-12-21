@@ -453,6 +453,21 @@ export class BookingService {
 			server.data.tvName = data;
 		}
 
+		data = await this.preference.getDataString(user, PreferenceService.Keys.serverMap);
+		if (data) {
+			server.data.map = data;
+		}
+
+		data = await this.preference.getDataString(user, PreferenceService.Keys.serverGitRepo);
+		if (data) {
+			server.data.gitRepository = data;
+		}
+
+		data = await this.preference.getDataString(user, PreferenceService.Keys.serverGitKey);
+		if (data) {
+			server.data.gitDeployKey = data;
+		}
+
 		return server
 	}
 

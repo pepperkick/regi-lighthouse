@@ -11,6 +11,9 @@ export class PreferenceService {
 		serverTf2ValveSdr: "server_tf2_sdr_mode",
 		serverHostname: "server_hostname",
 		serverTvName: "server_source_tv_name",
+		serverMap: "server_map",
+		serverGitRepo: "server_git_repo",
+		serverGitKey: "server_git_key",
 		rconCommandHistory: "rcon_command_history",
 		bookingRegion: "booking_preferred_region"
 	}
