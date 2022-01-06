@@ -1232,7 +1232,7 @@ export class BookingService {
 
 		let connectRconString = `${connectString}`
 		if (server.data.sdrEnable) {
-			connectRconString += ` rcon_address ${server.ip}:${server.port};`
+			connectRconString += ` rcon_address ""; rcon_address ${server.ip}:${server.port};`
 		}
 		if (server.data.rconPassword) {
 			connectRconString += ` rcon_password "${server.data.rconPassword}";`

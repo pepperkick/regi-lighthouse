@@ -281,7 +281,7 @@ export class BookingAdminService {
 			// TODO: Needs better handling
 			const hatchPort = server.port === 27015 ? 27017 : server.port + 2
 			if (server.data.sdrEnable) {
-				text += `\n\nconnect ${server.data.sdrIp}:${server.data.sdrPort}; password "${server.data.password}"; rcon_address ${server.ip}:${server.port}; rcon_password "${server.data.rconPassword}";`
+				text += `\n\nconnect ${server.data.sdrIp}:${server.data.sdrPort}; password "${server.data.password}"; rcon_address ""; rcon_address ${server.ip}:${server.port}; rcon_password "${server.data.rconPassword}";`
 			}
 			text += `\n\nconnect ${server.ip}:${server.port}; password "${server.data.password}"; rcon_password "${server.data.rconPassword}";`;
 			text += `\n\nhttps://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.data.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.data.rconPassword)}`
