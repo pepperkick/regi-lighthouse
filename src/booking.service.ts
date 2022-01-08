@@ -1100,11 +1100,19 @@ export class BookingService {
 	 * Check if the user has a specific role
 	 *
 	 * @param member
-	 * @param access Simplified premium role strings or role ID, example: T1, T23, T13, T123
+	 * @param access Simplified premium role strings or role ID, example: T1, T23, T13, T123, T1|<ID>
 	 */
 	userHasRoleFromSlug(member: GuildMember | APIInteractionGuildMember, access: boolean | string) {
 		if (typeof access === "boolean") {
 			return access;
+		}
+
+		if (access.includes("|")) {
+			const parts = access.split("|")
+			for (const part of parts) {
+				if (this.userHasRoleFromSlug(member, part))
+					return true;
+			}
 		}
 
 		if (access.charAt(0) === "F") {

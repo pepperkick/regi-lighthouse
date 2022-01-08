@@ -7,6 +7,9 @@ import * as moment from "moment";
 import { BookingOptions } from "../objects/booking.interface";
 import { APIInteractionGuildMember } from "discord-api-types";
 import { ErrorMessage, WarningMessage } from "../objects/message.exception";
+import { downloadMap, uploadMap } from "../utils";
+import { Logger } from "@nestjs/common";
+
 
 enum Continents {
 	"Asia" = "asia",
@@ -19,6 +22,7 @@ enum Continents {
 @Discord()
 @SlashGroup("booking", "Commands to interact with bookings")
 export class BookingCommand {
+	private readonly logger = new Logger(BookingCommand.name);
 	static service: BookingService
 	static preferenceService: PreferenceService
 
@@ -333,6 +337,58 @@ export class BookingCommand {
 		await interaction.reply({
 			content: message,
 			ephemeral: true,
+		})
+	}
+
+	@Slash("upload-map", { description: "Upload a map to FastDL from then given URL"})
+	async uploadMap(
+		@SlashOption("url", {
+			description: "URL of the map.",
+			required: true
+		})
+		url: string,
+		interaction: CommandInteraction
+	) {
+		if (!this.userHasAccess(interaction.member, config.features.uploadMaps)) {
+			return await interaction.reply({
+				content: `Currently you do not have access to uploading maps.`,
+				ephemeral: true,
+			})
+		}
+
+		this.logger.log(`Received upload map request from user ${interaction.user.username} (${interaction.user.id}) [${url}]`)
+
+		if (
+			url.includes("f000.backblazeb2.com/file/qixalite-fastdl/") ||
+			url.includes("fastdl.tf.qixalite.com")
+		) {
+			return await interaction.reply({
+				content: `Cannot use the provided url.`,
+				ephemeral: true,
+			})
+		}
+
+		await interaction.deferReply({
+			ephemeral: true
+		})
+
+		const parts =  url.split("/");
+		const filename = parts[parts.length - 1].split("?")[0];
+
+		if (!await downloadMap(filename, url)) {
+			return await interaction.editReply({
+				content: `Failed to download the map.`
+			})
+		}
+
+		if (!await uploadMap(filename)) {
+			return await interaction.editReply({
+				content: `Failed to upload the map.`
+			})
+		}
+
+		return await interaction.editReply({
+			content: `Your map has been successfully uploaded.`
 		})
 	}
 

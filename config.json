@@ -23,6 +23,12 @@
     "clientId": "",
     "clientSecret": ""
   },
+  "backblaze": {
+    "accessKey": "",
+    "secretKey": "",
+    "endpoint": "",
+    "bucket": ""
+  },
   "roles": {
     "premium_tier_1": "",
     "premium_tier_2": "",
@@ -35,6 +41,7 @@
     "providerSelector": true,
     "variantSelector": true,
     "premiumBooking": true,
+    "uploadMaps": true,
     "settings": {
       "serverPassword": true,
       "serverRconPassword": true,

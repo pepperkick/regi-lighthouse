@@ -3,7 +3,11 @@ import * as moment from "moment";
 import { DiscordClient, OnCommand } from "discord-nestjs";
 import { DMChannel, GuildMember, Message, User } from "discord.js";
 import { MessageException } from "./objects/message.exception";
-import { HttpException } from "@nestjs/common";
+import { HttpException, Logger } from "@nestjs/common";
+import * as path from "path";
+import * as fs from "fs";
+import axios from "axios";
+import * as AWS from "aws-sdk";
 
 interface Response<T> {
 	status: number,
@@ -173,4 +177,56 @@ export async function parseUserString(bot: DiscordClient, message: Message, arg:
 	const userId = await guild.members.fetch(arg);
 	if (userId)
 		return userId;
+}
+
+const mapLog = new Logger("MapLogger")
+
+export async function downloadMap(filename, url) {
+	mapLog.debug(`Downloading file ${filename} (${url})`)
+
+	const filepath = path.resolve("./", filename)
+	const response = await axios.get(url);
+
+	if (response.status === 200 &&
+		response.headers["content-type"] === 'application/octet-stream' &&
+		parseInt(response.headers["content-length"]) > 1000000
+	)	{
+		fs.writeFileSync(filepath, response.data, {
+			encoding: "binary"
+		})
+		return true;
+	}
+
+	return false;
+}
+
+export async function uploadMap(filename) {
+	const fileContent = fs.readFileSync(path.resolve("./", filename))
+	const s3 = new AWS.S3({
+		accessKeyId: config.backblaze.accessKey,
+		secretAccessKey: config.backblaze.secretKey,
+		endpoint: config.backblaze.endpoint
+	})
+
+	try {
+		const item = await s3.headObject({
+			Bucket: config.backblaze.bucket,
+			Key: `tf/maps/${filename}`
+		}).promise();
+		mapLog.debug(item);
+
+		return false;
+	} catch (error) {
+
+	}
+
+	mapLog.debug(`Uploading file ${filename} (${fileContent.length})`)
+	const response = await s3.upload({
+		Bucket: config.backblaze.bucket,
+		Key: `tf/maps/${filename}`,
+		Body: fileContent,
+	}).promise()
+	mapLog.debug(response);
+
+	return true;
 }
