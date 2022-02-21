@@ -55,7 +55,7 @@ export class BookingControllerDiscord {
 		// Parse arguments
 		for (const arg of args) {
 			// Try parsing region
-			const region = this.parseRegion(arg);
+			const region = this.bookingService.parseRegion(arg);
 			if (region) {
 				bookingOptions.region = region
 				continue
@@ -164,7 +164,7 @@ export class BookingControllerDiscord {
 		// Parse arguments
 		for (const arg of args) {
 			// Try parsing region
-			const region = this.parseRegion(arg);
+			const region = this.bookingService.parseRegion(arg);
 			if (region) {
 				bookingOptions.region = region;
 				continue
@@ -387,16 +387,6 @@ export class BookingControllerDiscord {
 	// 			throw new ErrorMessage(await this.i18n.t("COMMAND.USER.RCON.FAILED"));
 	// 		}
 	// 	}
-	// }
-
-	parseRegion(arg: string) {
-		const region = arg.toLowerCase();
-		const regionSlug = this.bookingService.getRegionSlug(region);
-		const regionConfig = this.bookingService.getRegionConfig(regionSlug);
-		if (regionConfig) {
-			return regionSlug
-		}
-	}
 	// }
 
 	parseTier(arg: string) {

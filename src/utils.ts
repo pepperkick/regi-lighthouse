@@ -183,21 +183,33 @@ const mapLog = new Logger("MapLogger")
 
 export async function downloadMap(filename, url) {
 	mapLog.debug(`Downloading file ${filename} (${url})`)
-
-	const filepath = path.resolve("./", filename)
 	const response = await axios.get(url);
 
 	if (response.status === 200 &&
 		response.headers["content-type"] === 'application/octet-stream' &&
 		parseInt(response.headers["content-length"]) > 1000000
 	)	{
+		// If filename does not contain ".bsp" then extract filename from headers
+		if (!filename.includes(".bsp")) {
+			const contentDisposition = response.headers["content-disposition"];
+			const filenameRegex = /filename="(.+)"/g;
+			const filenameMatch = filenameRegex.exec(contentDisposition);
+			if (filenameMatch) {
+				filename = filenameMatch[1];
+			}
+		}
+
+		const filepath = path.resolve("./", filename)
+
+		mapLog.debug(`Saving to file ${filepath}`)
 		fs.writeFileSync(filepath, response.data, {
 			encoding: "binary"
 		})
-		return true;
+
+		return filename;
 	}
 
-	return false;
+	return undefined;
 }
 
 export async function uploadMap(filename) {

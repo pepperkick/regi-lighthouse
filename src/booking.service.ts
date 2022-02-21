@@ -402,6 +402,12 @@ export class BookingService {
 				return false;
 			}
 
+			// Client is forbidden
+			if (error.response?.status === 403) {
+				await this.messageService.editMessageI18n(statusMessage, MessageType.ERROR, "BOOKING.CLIENT_FORBIDDEN");
+				return false;
+			}
+
 			await this.messageService.editMessageI18n(statusMessage, MessageType.ERROR, "BOOKING.START_FAILED");
 			return true;
 		}
@@ -573,6 +579,9 @@ export class BookingService {
 			const region: Region = regions[i];
 			const tags = region.tags || [];
 
+			if (region.hidden)
+				continue
+
 			tags.forEach(tag => allTags.includes(tag) || allTags.push(tag))
 		}
 
@@ -594,6 +603,15 @@ export class BookingService {
 		}
 
 		return filter;
+	}
+
+	parseRegion(arg: string) {
+		const region = arg.toLowerCase();
+		const regionSlug = this.getRegionSlug(region);
+		const regionConfig = this.getRegionConfig(regionSlug);
+		if (regionConfig) {
+			return regionSlug
+		}
 	}
 
 	searchTiers(region: string, text: string) {
@@ -1239,8 +1257,10 @@ export class BookingService {
 		}
 
 		let connectRconString = `${connectString}`
+		let rconString = ``;
 		if (server.data.sdrEnable) {
-			connectRconString += ` rcon_address ""; rcon_address ${server.ip}:${server.port};`
+			rconString = `rcon_address ""; rcon_address ${server.ip}:${server.port};`
+			connectRconString += ` ${rconString}`
 		}
 		if (server.data.rconPassword) {
 			connectRconString += ` rcon_password "${server.data.rconPassword}";`
@@ -1258,10 +1278,15 @@ export class BookingService {
 
 		const hatchPort = server.port === 27015 ? 27017 : server.port + 2
 		const hiveUrl = `https://hive.qixalite.com/?host=${encodeURI(server.ip)}&port=${server.port}&password=${encodeURI(server.data.rconPassword)}&hatch_port=${hatchPort}&hatch_password=${encodeURI(server.data.rconPassword)}`;
+		let description = `Your server is ready\n**Connect String with RCON**\`\`\`${connectRconString}\`\`\`\n**Connect String**\`\`\`${connectString}\`\`\`\n**SourceTV Details**\`\`\`${connectTvString}\`\`\``
+
+		if (server.data.sdrEnable) {
+			description += `\nIf you are unable to execute RCON commands in the server then use the following commands.\`\`\`${rconString}\`\`\``
+		}
 
 		const message = MessageService.buildMessageEmbed(MessageType.SUCCESS)
 			.setTitle("Bookings")
-			.setDescription(`Your server is ready\n**Connect String with RCON**\`\`\`${connectRconString}\`\`\`\n**Connect String**\`\`\`${connectString}\`\`\`\n**SourceTV Details**\`\`\`${connectTvString}\`\`\``)
+			.setDescription(description)
 			.addField("Region", `\`${server.region}\``, true)
 			.addField("Variant", `\`${booking.variant}\``, true)
 			.addField("Server Control", `[Click here](${hiveUrl})`, false);
