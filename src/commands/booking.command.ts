@@ -15,6 +15,7 @@ import { RconCommand } from './booking/rcon.command';
 import { StatusCommand } from './booking/status.command';
 import { ServerDemosCommand } from './booking/server-demos.command';
 import { ServerLogsCommand } from './booking/server-logs.command';
+import { DestroyCommand } from './booking/destroy.command';
 
 export class SettingsStrings {
   static readonly SETTING_DISABLED =
@@ -38,6 +39,7 @@ export class SettingsStrings {
 @Module({
   exports: [
     CreateCommand,
+    DestroyCommand,
     RconCommand,
     StatusCommand,
     ServerDemosCommand,

@@ -35,7 +35,7 @@ import {
 import { getDateFormattedRelativeTime } from './utils';
 import { Game } from './objects/game.enum';
 import { PreferenceService } from './preference.service';
-import { APIInteractionGuildMember } from 'discord-api-types';
+import { APIInteractionGuildMember, APIUser } from 'discord-api-types';
 import { Variant } from './objects/variant.interface';
 
 @Injectable()
@@ -634,18 +634,33 @@ export class BookingService {
   /**
    * Close a user's booking
    *
-   * @param user
+   * @param member
    * @param options
    */
   async destroyUserBooking(
-    user: User,
+    member: User | GuildMember | APIInteractionGuildMember,
     options?: { forSomeoneElse?: boolean; bookingId?: string },
   ) {
+    const user: User | APIUser =
+      member instanceof GuildMember
+        ? member.user
+        : member instanceof User
+        ? member
+        : member.user;
     this.logger.log(`Received user closing request from ${user.id}`);
 
-    // Check if the user already has booking
+    // Check if the user has a booking
     const userBookings = await this.getActiveUserBookings(user.id);
-    if (userBookings.length === 0) {
+    if (userBookings.length > 0) {
+      const booking = userBookings[0];
+      if (await this.validateUnbookRequest(booking, options)) {
+        return this.destroyBooking(booking);
+      }
+    }
+
+    // Check if the user has a reservation
+    const reservations = await this.getUserReservations(user.id);
+    if (reservations.length === 0) {
       if (!options?.forSomeoneElse)
         throw new WarningMessage(
           await this.i18n.t('COMMAND.USER.UNBOOK.NO_BOOKING'),
@@ -653,15 +668,17 @@ export class BookingService {
       else
         throw new WarningMessage(
           await this.i18n.t('COMMAND.ADMIN.BOOK.USER_HAS_NO_BOOKING', {
-            args: { user: user.tag },
+            args: { user: user.username },
           }),
         );
-    } else if (userBookings.length === 1) {
-      const booking = userBookings[0];
-      if (await this.validateUnbookRequest(booking, options)) {
-        return this.destroyBooking(booking);
-      }
+    } else if (reservations.length > 0) {
+      const reservation = reservations[0];
+      reservation.status = BookingStatus.CLOSED;
+      await reservation.save();
+      return true;
     }
+
+    return false;
   }
 
   /**
@@ -693,6 +710,7 @@ export class BookingService {
         },
       };
       await booking.save();
+      return true;
     } catch (error) {
       this.logger.error('Failed to send server request', error);
 
@@ -705,14 +723,14 @@ export class BookingService {
           MessageType.SUCCESS,
           'BOOKING.STOP_SUCCESS',
         );
-        return;
+        return true;
       } else if (error.response.status === 451) {
         await this.messageService.editMessage(
           statusMessage,
           MessageType.WARNING,
           'You server has been unbooked automatically and it is currently stopping your server. Please wait until it completes.',
         );
-        return;
+        return true;
       }
 
       await this.messageService.editMessageI18n(
@@ -720,6 +738,7 @@ export class BookingService {
         MessageType.ERROR,
         'BOOKING.STOP_FAILED',
       );
+      return false;
     }
   }
 

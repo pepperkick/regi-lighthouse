@@ -387,9 +387,10 @@ export class BookingControllerDiscord {
           args: { user: member.user.tag },
         }),
       );
-      return await this.bookingService.destroyUserBooking(member.user, {
+      await this.bookingService.destroyUserBooking(member.user, {
         forSomeoneElse: true,
       });
+      return;
     }
 
     throw new WarningMessage(await this.i18n.t('COMMAND.ADMIN.UNBOOK.USAGE'));

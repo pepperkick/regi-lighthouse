@@ -40,7 +40,11 @@ export class DiscordService {
 
     client.on('interactionCreate', (interaction: Interaction) => {
       if (interaction.guild.id !== config.guild) return;
-
+      if (
+        interaction.channel.id !== config.channels.users &&
+        interaction.channel.id !== config.channels.admin
+      )
+        return;
       client.executeInteraction(interaction);
     });
 
